@@ -18,20 +18,25 @@ class AuthController extends Controller
             ]);
 
             if ($validation->fails()) {
-                return response()->json([
-                    'message' => 'Validation error',
-                    'errors' => $validation->errors(),
-                ], 422);
+                return $this->sendError('Validation error', $validation->errors(), 422);
             }
             $validated = $validation->validated();
 
             $user = User::where('email', $validated['email'])->first();
 
             if (!$user || !Hash::check($validated['password'], $user->password)) {
-                return $this->sendError('Invalid credentials', code: 401);
+                return $this->sendError('Invalid credentials', [], 401);
             }
 
-            $token = $user->createToken('user_token', ['tickets-purchase', 'tickets-view', 'profile-manage'])->plainTextToken;
+            $token = null;
+
+            if ($user->role === 'superadmin') {
+                $token = $user->createToken('superadmin_token', ['*'])->plainTextToken;
+            } elseif ($user->role === 'admin') {
+                $token = $user->createToken('admin_token', ['profile-manage', 'event-view', 'event-manage'])->plainTextToken;
+            } else {
+                $token = $user->createToken('user_token', ['profile-manage', 'event-view'])->plainTextToken;
+            }
 
             return $this->sendResponse([
                 'token' => $token,

@@ -9,6 +9,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Event extends Model
 {
     use SoftDeletes;
+    protected $fillable = [
+        'name',
+        'description',
+        'is_active',
+    ];
     public function categories()
     {
         return $this->hasMany(EventTicketCategory::class);

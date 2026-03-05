@@ -15,7 +15,9 @@ return new class extends Migration {
             $table->foreignId('category_id')
                 ->constrained('event_ticket_categories')
                 ->onDelete('cascade');
-            $table->integer('seat_number');
+            $table->string('seat_number', 4);
+            $table->integer('row_index');
+            $table->integer('column_index');
             $table->boolean('is_available')->default(true);
             $table->timestamp('locked_until')->nullable();
             $table->softDeletesTz('deleted_at', precision: 0);

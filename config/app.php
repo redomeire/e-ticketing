@@ -123,4 +123,23 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Additional Configuration Files
+    |--------------------------------------------------------------------------
+    |
+    | The following configuration options allow you to specify additional configuration
+    | files that should be loaded by the framework. This is useful for organizing
+    | your configuration into multiple files, especially for larger applications.
+    |
+    */
+
+    'additional_config_files' => [
+        // Add the names of additional configuration files here (without the .php extension)
+        // For example: 'services', 'custom', etc.
+        'admin_email' => env('ADMIN_EMAIL'),
+        'admin_password' => env('ADMIN_PASSWORD'),
+        'superadmin_email' => env('SUPERADMIN_EMAIL'),
+        'superadmin_password' => env('SUPERADMIN_PASSWORD'),
+    ],
 ];

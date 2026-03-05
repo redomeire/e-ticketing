@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 abstract class Controller
 {
     //
-    public function sendResponse($data, $message = 'Success')
+    public function sendResponse($data, $message = 'Success', $code = 200)
     {
         $response = [
             'success' => true,
@@ -13,7 +13,7 @@ abstract class Controller
             'message' => $message,
         ];
 
-        return response()->json($response, 200);
+        return response()->json($response, $code);
     }
 
     public function sendError($errorMessage, $errors = [], $code = 404)
