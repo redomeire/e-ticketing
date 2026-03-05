@@ -1,0 +1,56 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    entrypoint: php artisan octane:frankenphp --workers=1 --max-requests=1
+    container_name: e-ticketing-app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+      - "443:443"
+    volumes:
+      - .:/app
+    environment:
+      - CADDY_GLOBAL_OPTIONS="auto_https off"
+      - APP_ENV=${APP_ENV:-local}
+      - SERVER_NAME=:8000
+      - DB_CONNECTION=pgsql
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_DATABASE=${DB_DATABASE}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - e-ticketing-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: e-ticketing-postgres
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - e-ticketing-network
+
+  redis:
+    image: redis:alpine
+    container_name: e-ticketing-redis
+    networks:
+      - e-ticketing-network
+
+networks:
+  e-ticketing-network:
+    driver: bridge
