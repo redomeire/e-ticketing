@@ -23,6 +23,7 @@ Route::prefix('v1')->group(function () {
             ->group(function () {
                 Route::get('/', [EventController::class, 'all'])->name('event.all');
                 Route::get('/orders', [OrderController::class, 'all'])->name('event.orders');
+                Route::get('/orders/{id}', [OrderController::class, 'repay'])->name('event.orders.repay');
                 Route::get('/{id}', [EventController::class, 'show'])->name('event.show');
                 Route::get('/{event_id}/seats', [EventController::class, 'getSeats'])->name('event.seats');
                 Route::post('/seats/checkout', [OrderController::class, 'checkout'])->name('event.seats.checkout');

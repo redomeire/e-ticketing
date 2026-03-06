@@ -15,6 +15,9 @@ return new class extends Migration {
             $table->string('name');
             $table->text('description')->nullable();
             $table->softDeletesTz('deleted_at', precision: 0);
+            $table->date('date');
+            $table->integer('max_row_index');
+            $table->integer('max_column_index');
             $table->boolean('is_active')->default(false);
             $table->timestamps();
         });

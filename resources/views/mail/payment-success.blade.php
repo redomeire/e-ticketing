@@ -2,15 +2,14 @@
     Pesanan Dikirim! 🎉
     Halo {{ $user->name ?? 'Pelanggan' }},
 
-    Pesanan Anda dengan nomor #{{ $order->id }} telah dikirim. Kami berharap Anda menyukainya!
+    Pesanan Anda telah berhasil diproses. Kami berharap Anda menyukainya!
 
     Rincian Pesanan
-    Nomor Pesanan: {{ $payment->id }}
-
+    Nomor Pesanan: {{ $order->invoice_id }}
     Tanggal Kirim: {{ now()->format('d M Y') }}
-
     Metode Pembayaran: {{ $payment->payment_method }}
-
-    Terima kasih,<br>
+    Channel Pembayaran: {{ $payment->payment_channel }}
+    <br>
+    Terima kasih,
     PayTrack
 </x-mail::message>

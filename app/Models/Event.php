@@ -13,6 +13,9 @@ class Event extends Model
         'name',
         'description',
         'is_active',
+        'date',
+        'max_row_index',
+        'max_column_index'
     ];
     public function categories()
     {

@@ -22,6 +22,7 @@ return new class extends Migration {
             $table->timestamp('locked_until')->nullable();
             $table->softDeletesTz('deleted_at', precision: 0);
             $table->timestamps();
+            $table->unique(['category_id', 'row_index', 'column_index'], 'unique_seat_position');
         });
     }
 

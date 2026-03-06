@@ -48,6 +48,9 @@ class EventController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
+                'date' => 'required|date',
+                'max_row_index' => 'required|integer|min:0',
+                'max_column_index' => 'required|integer|min:0',
                 'categories' => 'required|array|min:1',
                 'categories.*.name' => 'required|string|max:255',
                 'categories.*.base_price' => 'required|numeric|min:0',
@@ -61,17 +64,32 @@ class EventController extends Controller
             $event = Event::create(array_merge([
                 'name' => $validated['name'],
                 'description' => $validated['description'],
+                'date' => $validated['date'],
+                'max_row_index' => $validated['max_row_index'],
+                'max_column_index' => $validated['max_column_index'],
             ]));
+            $categories = [];
             foreach ($validated['categories'] as $category) {
-                EventTicketCategory::create([
+                $categories[] = new EventTicketCategory([
                     'event_id' => $event->id,
                     'name' => $category['name'],
                     'base_price' => $category['base_price'],
                     'quota' => $category['quota'],
                 ]);
             }
+            // if quota exceed the dot product of max_row_index and max_column_index, return error
+            $total_quota = array_sum(array_column($validated['categories'], 'quota'));
+            $max_capacity = ($validated['max_row_index'] + 1) * ($validated['max_column_index'] + 1);
+            if ($total_quota > $max_capacity) {
+                DB::rollBack();
+                return $this->sendError('Validation Error', ['categories' => 'Total quota exceed the maximum capacity of the event'], 422);
+            }
+            $saved_categories = $event->categories()->saveMany($categories);
             DB::commit();
-            return $this->sendResponse($event, 'Event created successfully', 201);
+            return $this->sendResponse([
+                'event' => $event,
+                'categories' => $saved_categories,
+            ], 'Event created successfully', 201);
         } catch (\Exception $e) {
             return $this->sendError('Error creating event', ['error' => $e->getMessage()], 500);
         }
@@ -184,15 +202,6 @@ class EventController extends Controller
     }
     public function storeSeats(Request $request)
     {
-        /**
-         * Payload example:
-         * {
-         *  event_id: 1,
-         *  assignments: [
-         *     { category_id: 1, seats: [{ row: 0, column: 0, number: 'A1' }] }
-         *   ]
-         * }
-         */
         try {
             $validator = Validator::make($request->all(), [
                 'event_id' => 'required|integer|exists:events,id',
@@ -208,13 +217,22 @@ class EventController extends Controller
             }
             $validated = $validator->validated();
             $data = [];
+            $event = Event::find($validated['event_id']);
+            $now = now();
             foreach ($validated['assignments'] as $group) {
                 foreach ($group['seats'] as $seat) {
+                    if ($seat['row'] > $event->max_row_index || $seat['column'] > $event->max_column_index) {
+                        return $this->sendError('Validation Error', [
+                            'assignments' => "Seat row and column index must be within the event's max_row_index and max_column_index",
+                        ], 422);
+                    }
                     $data[] = [
                         'category_id' => $group['category_id'],
                         'row_index' => $seat['row'],
                         'column_index' => $seat['column'],
                         'seat_number' => $seat['number'],
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ];
                 }
             }

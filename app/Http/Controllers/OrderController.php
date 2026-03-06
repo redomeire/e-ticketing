@@ -23,8 +23,33 @@ class OrderController extends Controller
     {
         try {
             $user = auth()->user();
-            $orders = Order::where('user_id', $user->id)
+            $orders = DB::table('orders')
+                ->join('order_items', 'orders.id', '=', 'order_items.order_id')
+                ->join('event_seats', 'order_items.seat_id', '=', 'event_seats.id')
+                ->join('event_ticket_categories', 'event_seats.category_id', '=', 'event_ticket_categories.id')
+                ->join('events', 'event_ticket_categories.event_id', '=', 'events.id')
+                ->select(
+                    'orders.id',
+                    'orders.invoice_id',
+                    'orders.status',
+                    'orders.payment_url',
+                    'orders.created_at',
+                )
+                ->selectRaw('SUM(order_items.price_at_purchase) as total_amount')
+                ->selectRaw('MIN(events.name) as event_name')
+                ->selectRaw('MIN(events.date) as event_date')
+                ->selectRaw('COUNT(order_items.id) as total_tickets')
+                ->where('orders.user_id', $user->id)
+                ->groupBy(
+                    'orders.id',
+                    'orders.invoice_id',
+                    'orders.status',
+                    'orders.payment_url',
+                    'orders.created_at',
+                )
+                ->orderBy('orders.created_at', 'desc')
                 ->get();
+
             return $this->sendResponse($orders, 'Orders retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve orders', [
@@ -34,6 +59,7 @@ class OrderController extends Controller
     }
     public function checkout(Request $request)
     {
+        // TODO: add automatic expire order and release seat if payment not made after 5 minutes
         try {
             $validator = Validator::make($request->all(), [
                 'seat_id' => 'required|exists:event_seats,id',
@@ -87,15 +113,34 @@ class OrderController extends Controller
             ], 500);
         }
     }
+    public function repay($id)
+    {
+        try {
+            $user = auth()->user();
+            $order = Order::where('id', $id)->where('user_id', $user->id)->firstOrFail();
+            if ($order->status !== 'pending') {
+                return $this->sendError('Only pending orders can be repaid', [], 400);
+            }
+            $invoice_url = $this->createInvoice($order, $order->orderItem->first());
+            $order->update(['payment_url' => $invoice_url]);
+            return $this->sendResponse(['invoice_url' => $invoice_url], 'New Payment URL created');
+        } catch (\Exception $e) {
+            return $this->sendError('Repayment failed', [
+                $e->getMessage()
+            ], 500);
+        }
+    }
     public function checkoutWebhook(Request $request)
     {
         try {
             $payload = $request->all();
             Log::info('Received webhook payload', $payload);
             RetrieveCheckoutJob::dispatch($payload);
-            return response()->json(['message' => 'Webhook handled successfully']);
+            return $this->sendResponse(null, 'Webhook received and processing started');
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Webhook handling failed', 'error' => $e->getMessage()], 500);
+            return $this->sendError('Failed to process webhook', [
+                $e->getMessage()
+            ], 500);
         }
     }
     private function createInvoice(Order $order, OrderItem $order_item)

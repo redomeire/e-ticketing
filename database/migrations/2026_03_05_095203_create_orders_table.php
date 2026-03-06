@@ -17,6 +17,7 @@ return new class extends Migration {
                 ->onDelete('cascade');
             $table->string('invoice_id')->unique();
             $table->enum('status', ['pending', 'paid', 'expired', 'failed'])->default('pending');
+            $table->text('payment_url')->nullable();
             $table->softDeletesTz('deleted_at', precision: 0);
             $table->timestamps();
         });

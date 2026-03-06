@@ -11,6 +11,8 @@ class Payment extends Model
         "order_id",
         "external_id",
         "payment_method",
+        "payment_channel",
+        "amount",
         "status",
         "paid_at"
     ];

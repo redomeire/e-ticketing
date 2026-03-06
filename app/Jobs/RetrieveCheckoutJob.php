@@ -6,7 +6,6 @@ use App\Mail\PaymentFailed;
 use App\Mail\PaymentSuccess;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
@@ -58,6 +57,8 @@ class RetrieveCheckoutJob implements ShouldQueue
                     'order_id' => $order->id,
                     'external_id' => $invoiceId,
                     'payment_method' => $this->payload['payment_method'] ?? 'unknown',
+                    'payment_channel' => $this->payload['payment_channel'] ?? 'unknown',
+                    'amount' => $this->payload['amount'] ?? 0,
                     'status' => 'paid',
                     'paid_at' => now(),
                 ]);
@@ -71,26 +72,34 @@ class RetrieveCheckoutJob implements ShouldQueue
                 }
             } elseif ($status === 'EXPIRED') {
                 Log::warning(message: "Invoice #{$order->invoice_id} has been expired.");
-                $order->status = 'expired';
-                $order->save();
+                $order->update([
+                    'status' => 'expired',
+                    'payment_url' => null
+                ]);
                 // create payment
                 Payment::create([
                     'order_id' => $order->id,
                     'external_id' => $invoiceId,
                     'payment_method' => $this->payload['payment_method'] ?? 'unknown',
+                    'payment_channel' => $this->payload['payment_channel'] ?? 'unknown',
+                    'amount' => $this->payload['amount'] ?? 0,
                     'status' => 'expired',
                     'paid_at' => now(),
                 ]);
             } elseif ($status === 'FAILED') {
                 Log::warning("Invoice with ID #{$order->invoice_id} gagal.");
-                $order->status = 'failed';
-                $order->save();
+                $order->update([
+                    'status' => 'failed',
+                    'payment_url' => null
+                ]);
 
                 // create payment
                 Payment::create([
                     'order_id' => $order->id,
                     'external_id' => $invoiceId,
                     'payment_method' => $this->payload['payment_method'] ?? 'unknown',
+                    'payment_channel' => $this->payload['payment_channel'] ?? 'unknown',
+                    'amount' => $this->payload['amount'] ?? 0,
                     'status' => 'failed',
                     'paid_at' => now(),
                 ]);

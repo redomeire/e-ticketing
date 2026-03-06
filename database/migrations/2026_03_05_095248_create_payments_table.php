@@ -17,6 +17,8 @@ return new class extends Migration {
                 ->onDelete('cascade');
             $table->string('external_id');
             $table->string('payment_method');
+            $table->string('payment_channel');
+            $table->decimal('amount', 15, 2);
             $table->enum('status', ['pending', 'paid', 'expired', 'failed'])->default('pending');
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
