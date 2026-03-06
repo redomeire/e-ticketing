@@ -30,6 +30,7 @@ class OrderController extends Controller
                 ->join('events', 'event_ticket_categories.event_id', '=', 'events.id')
                 ->select(
                     'orders.id',
+                    'event_seats.id as seat_id',
                     'orders.invoice_id',
                     'orders.status',
                     'orders.payment_url',
@@ -42,6 +43,7 @@ class OrderController extends Controller
                 ->where('orders.user_id', $user->id)
                 ->groupBy(
                     'orders.id',
+                    'event_seats.id',
                     'orders.invoice_id',
                     'orders.status',
                     'orders.payment_url',
