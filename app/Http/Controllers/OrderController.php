@@ -23,7 +23,6 @@ class OrderController extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'event_id' => 'required|exists:events,id',
                 'seat_id' => 'required|exists:event_seats,id',
             ]);
             if ($validator->fails()) {

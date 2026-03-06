@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\OrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -22,6 +23,8 @@ Route::prefix('v1')->group(function () {
                 Route::get('/', [EventController::class, 'all'])->name('event.all');
                 Route::get('/{id}', [EventController::class, 'show'])->name('event.show');
                 Route::get('/{event_id}/seats', [EventController::class, 'getSeats'])->name('event.seats');
+                Route::post('/seats/checkout', [OrderController::class, 'checkout'])->name('event.seats.checkout');
+                Route::post('/seats/checkout/webhook', [OrderController::class, 'checkoutWebhook'])->name('event.seats.checkout.webhook');
             });
         Route::middleware(['auth:sanctum', 'abilities:event-manage'])
             ->group(function () {
