@@ -16,6 +16,9 @@ class EventTicketCategory extends Model
         'base_price',
         'quota',
     ];
+    protected $casts = [
+        'base_price' => 'float',
+    ];
     public function event()
     {
         return $this->belongsTo(Event::class);

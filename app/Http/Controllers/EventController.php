@@ -29,6 +29,19 @@ class EventController extends Controller
             return $this->sendError('Error retrieving events', ['error' => $e->getMessage()], 500);
         }
     }
+    public function show($id)
+    {
+        try {
+            // select event with categories and seats
+            $event = Event::with('categories:id,event_id,name,base_price')->select(['id', 'name', 'description', 'is_active'])->find($id);
+            if (!$event) {
+                return $this->sendError('Event not found', [], 404);
+            }
+            return $this->sendResponse($event, 'Event retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->sendError('Error retrieving event', ['error' => $e->getMessage()], 500);
+        }
+    }
     public function store(Request $request)
     {
         try {

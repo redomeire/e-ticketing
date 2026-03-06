@@ -141,5 +141,7 @@ return [
         'admin_password' => env('ADMIN_PASSWORD'),
         'superadmin_email' => env('SUPERADMIN_EMAIL'),
         'superadmin_password' => env('SUPERADMIN_PASSWORD'),
+        'xendit_secret_key' => env('XENDIT_SECRET_KEY'),
+        'frontend_url' => env('FRONTEND_URL'),
     ],
 ];
