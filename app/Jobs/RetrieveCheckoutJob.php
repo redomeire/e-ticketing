@@ -2,11 +2,15 @@
 
 namespace App\Jobs;
 
+use App\Mail\PaymentFailed;
+use App\Mail\PaymentSuccess;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class RetrieveCheckoutJob implements ShouldQueue
 {
@@ -60,9 +64,8 @@ class RetrieveCheckoutJob implements ShouldQueue
                 $order->status = 'paid';
                 $order->save();
                 Log::info("Invoice with ID #{$order->invoice_id} successfully changed to 'paid'.");
-                // TODO send email notification to user
-                // $user = User::find($bill->user_id);
-                // Mail::to($user->email)->send(new PaymentSuccess($bill));
+                $user = User::find($order->user_id);
+                Mail::to($user->email)->send(new PaymentSuccess(order: $order));
             } elseif ($status === 'EXPIRED') {
                 Log::warning(message: "Invoice #{$order->invoice_id} has been expired.");
                 $order->status = 'expired';
@@ -89,10 +92,10 @@ class RetrieveCheckoutJob implements ShouldQueue
                     'paid_at' => now(),
                 ]);
 
-                // if ($order->user_id) {
-                //     $user = User::find($bill->user_id);
-                //     Mail::to($user->email)->send(new PaymentFailed($bill));
-                // }
+                if ($order->user_id) {
+                    $user = User::find($order->user_id);
+                    Mail::to($user->email)->send(new PaymentFailed($order));
+                }
             }
         } catch (\Throwable $th) {
             Log::error('Error processing Xendit webhook: ' . $th->getMessage(), $this->payload);
