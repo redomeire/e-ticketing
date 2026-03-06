@@ -19,6 +19,19 @@ class OrderController extends Controller
     {
         $this->payment_service = $payment_service;
     }
+    public function all(Request $request)
+    {
+        try {
+            $user = auth()->user();
+            $orders = Order::where('user_id', $user->id)
+                ->get();
+            return $this->sendResponse($orders, 'Orders retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->sendError('Failed to retrieve orders', [
+                $e->getMessage()
+            ], 500);
+        }
+    }
     public function checkout(Request $request)
     {
         try {

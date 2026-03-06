@@ -22,6 +22,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware(['auth:sanctum', 'abilities:event-view'])
             ->group(function () {
                 Route::get('/', [EventController::class, 'all'])->name('event.all');
+                Route::get('/orders', [OrderController::class, 'all'])->name('event.orders');
                 Route::get('/{id}', [EventController::class, 'show'])->name('event.show');
                 Route::get('/{event_id}/seats', [EventController::class, 'getSeats'])->name('event.seats');
                 Route::post('/seats/checkout', [OrderController::class, 'checkout'])->name('event.seats.checkout');
