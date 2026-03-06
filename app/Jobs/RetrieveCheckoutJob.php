@@ -66,6 +66,7 @@ class RetrieveCheckoutJob implements ShouldQueue
                 Log::info("Invoice with ID #{$order->invoice_id} successfully changed to 'paid'.");
                 $user = User::find($order->user_id);
                 Mail::to($user->email)->send(new PaymentSuccess(order: $order));
+                Log::info("Payment success email sent to user with email {$user->email} for order #{$order->invoice_id}.");
             } elseif ($status === 'EXPIRED') {
                 Log::warning(message: "Invoice #{$order->invoice_id} has been expired.");
                 $order->status = 'expired';
@@ -95,6 +96,7 @@ class RetrieveCheckoutJob implements ShouldQueue
                 if ($order->user_id) {
                     $user = User::find($order->user_id);
                     Mail::to($user->email)->send(new PaymentFailed($order));
+                    Log::info("Payment failed email sent to user with email {$user->email} for order #{$order->invoice_id}.");
                 }
             }
         } catch (\Throwable $th) {

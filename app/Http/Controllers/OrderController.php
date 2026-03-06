@@ -25,40 +25,49 @@ class OrderController extends Controller
             $validator = Validator::make($request->all(), [
                 'seat_id' => 'required|exists:event_seats,id',
             ]);
+
             if ($validator->fails()) {
                 return $this->sendError('Validation Error', $validator->errors(), 422);
             }
+
             $validated = $validator->validated();
             $user = auth()->user();
-            DB::beginTransaction();
-            // create order
-            $seat = EventSeat::where('id', $validated['seat_id'])
-                ->lockForUpdate()
-                ->first();
-            $is_locked = $seat->locked_until && $seat->locked_until > now();
-            if ($is_locked && !$seat->is_available) {
-                throw new \Exception('Sorry, this seat is currently taken. Please choose another one.');
-            }
-            $seat->update([
-                'is_available' => false,
-                'locked_until' => now()->addMinutes(5),
-            ]);
-            $price = $seat->price;
-            $application_fee = $price * 0.1;
-            $order = Order::create([
-                'user_id' => $user->id,
-                'invoice_id' => uniqid('INV-'),
-            ]);
-            $order_item = OrderItem::create([
-                'order_id' => $order->id,
-                'seat_id' => $validated['seat_id'],
-                'price_at_purchase' => $price + $application_fee,
-            ]);
-            DB::commit();
-            $invoice_url = $this->createInvoice($order, $order_item);
-            return $this->sendResponse([
-                'invoice_url' => $invoice_url,
-            ], 'Checkout url created', 201);
+
+            $response = DB::transaction(function () use ($validated, $user) {
+                $seat = EventSeat::where('id', $validated['seat_id'])
+                    ->lockForUpdate()
+                    ->first();
+                $is_locked = $seat->locked_until && $seat->locked_until > now();
+                if (!$seat->is_available || $is_locked) {
+                    throw new \Exception('Sorry, this seat is currently taken. Please choose another one.');
+                }
+                $seat->update([
+                    'is_available' => false,
+                    'locked_until' => now()->addMinutes(5),
+                ]);
+                $price = $seat->category->base_price;
+                $application_fee = $price * 0.1;
+
+                $order = Order::create([
+                    'user_id' => $user->id,
+                    'invoice_id' => uniqid('INV-'),
+                    'status' => 'pending',
+                    'total_amount' => $price + $application_fee
+                ]);
+                $order_item = OrderItem::create([
+                    'order_id' => $order->id,
+                    'seat_id' => $seat->id,
+                    'price_at_purchase' => $price + $application_fee,
+                ]);
+                $invoice_url = $this->createInvoice($order, $order_item);
+                $order->update(['payment_url' => $invoice_url]);
+                return [
+                    'invoice_url' => $invoice_url,
+                    'order_id' => $order->id
+                ];
+            });
+
+            return $this->sendResponse($response, 'Checkout URL created', 201);
         } catch (\Exception $e) {
             return $this->sendError('Checkout failed', [
                 $e->getMessage()

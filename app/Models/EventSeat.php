@@ -13,6 +13,14 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class EventSeat extends Model
 {
     use SoftDeletes;
+    protected $fillable = [
+        'event_id',
+        'category_id',
+        'seat_number',
+        'is_available',
+        'locked_until',
+        'price',
+    ];
     public function category()
     {
         return $this->belongsTo(EventTicketCategory::class, 'category_id');

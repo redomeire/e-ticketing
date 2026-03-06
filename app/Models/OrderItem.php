@@ -10,6 +10,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class OrderItem extends Model
 {
     use SoftDeletes;
+    protected $fillable = [
+        'order_id',
+        'seat_id',
+        'price_at_purchase',
+    ];
     public function order()
     {
         return $this->belongsTo(Order::class);
