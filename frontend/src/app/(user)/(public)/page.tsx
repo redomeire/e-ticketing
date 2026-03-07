@@ -62,7 +62,6 @@ export default function Page() {
     return (
         <div className="min-h-screen bg-[#f8f9fa]">
             <div className="container mx-auto px-4 py-12">
-                {/* Section Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                     <div className="space-y-2">
                         <h2 className="text-3xl font-black text-[#002558] tracking-tight">

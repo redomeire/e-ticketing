@@ -30,8 +30,6 @@ export default function EventCard({ title, date, location, price, image_url, org
                     <p className="text-[10px] font-bold text-[#002558] uppercase tracking-wider">{organizer}</p>
                 </div>
             </div>
-
-            {/* Content Section */}
             <div className="p-5 flex flex-col grow gap-3">
                 <h3 className="text-lg font-bold text-gray-900 line-clamp-2 min-h-14 leading-tight group-hover:text-blue-600 transition-colors">
                     {title}

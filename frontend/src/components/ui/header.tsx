@@ -32,7 +32,6 @@ const Header = () => {
 
     return (
         <header className="w-full bg-[#002558] text-white sticky top-0 z-50">
-            {/* 1. TOP BAR - Ukuran teks ditingkatkan ke text-sm (14px) */}
             <div className="border-b border-white/10 hidden md:block">
                 <div className="container mx-auto flex h-12 items-center justify-end gap-6 px-4 text-sm font-medium opacity-90">
                     <a href="#" className="hover:text-blue-300 transition-colors">Mulai Jadi Event Creator</a>
@@ -74,12 +73,16 @@ const Header = () => {
                     ))}
 
                     <div className="flex items-center gap-3 ml-2">
-                        <Button variant="outline" className="border-white text-white hover:bg-white/10 hover:text-white h-11 px-6 text-sm font-bold">
-                            Daftar
-                        </Button>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-8 text-sm font-bold shadow-lg">
-                            Masuk
-                        </Button>
+                        <Link href="/auth/register">
+                            <Button variant="outline" className="border-white text-white hover:bg-white/10 hover:text-white h-11 px-6 text-sm font-bold">
+                                Daftar
+                            </Button>
+                        </Link>
+                        <Link href="/auth/login">
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-8 text-sm font-bold shadow-lg">
+                                Masuk
+                            </Button>
+                        </Link>
                     </div>
                 </nav>
                 <div className="flex xl:hidden items-center gap-2">
@@ -118,12 +121,16 @@ const Header = () => {
                                 <div className="h-px bg-white/10 w-full" />
 
                                 <div className="flex flex-col gap-4">
-                                    <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-bold">
-                                        Masuk
-                                    </Button>
-                                    <Button variant="outline" className="w-full border-white text-white h-14 text-lg">
-                                        Daftar
-                                    </Button>
+                                    <Link href="/auth/login">
+                                        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-bold">
+                                            Masuk
+                                        </Button>
+                                    </Link>
+                                    <Link href="/auth/register">
+                                        <Button variant="outline" className="w-full border-white text-white h-14 text-lg">
+                                            Daftar
+                                        </Button>
+                                    </Link>
                                 </div>
                             </div>
                         </SheetContent>
@@ -146,13 +153,13 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* <div className="container mx-auto pb-5 px-4 flex gap-6 text-xs text-white/50 font-medium overflow-x-auto no-scrollbar">
+            <div className="container mx-auto pb-5 px-4 flex gap-6 text-xs text-white/50 font-medium overflow-x-auto no-scrollbar">
                 {['#Promo_Indodana', '#LOKETPlus', '#LOKETScreen', '#LOKET_Promo', '#Loket'].map((tag) => (
                     <span key={tag} className="hover:text-white cursor-pointer transition-colors whitespace-nowrap italic">
                         {tag}
                     </span>
                 ))}
-            </div> */}
+            </div>
         </header>
     );
 };
