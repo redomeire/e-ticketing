@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,16 +26,21 @@ const SeatSelector = dynamic(
 
 export default function BookingPage() {
     const [selected_seats, set_selected_seats] = useState<Seat[]>([]);
+    const [application_fee, set_application_fee] = useState(0);
 
     const toggle_seat = (seat: Seat) => {
         if (selected_seats.find(s => s.id === seat.id)) {
             set_selected_seats(selected_seats.filter(s => s.id !== seat.id));
+            set_application_fee((prev) => prev - 0.1 * seat.price);
         } else {
             set_selected_seats([...selected_seats, seat]);
+            set_application_fee((prev) => prev + 0.1 * seat.price);
         }
     };
 
-    const total_price = selected_seats.reduce((acc, curr) => acc + curr.price, 0);
+    const total_price = useMemo(() => {
+        return selected_seats.reduce((acc, curr) => acc + curr.price, 0)
+    }, [selected_seats]);
 
     return (
         <div className="min-h-screen bg-[#f8f9fa] pb-20">
@@ -74,21 +79,21 @@ export default function BookingPage() {
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nama Lengkap</Label>
                                                 <div className="relative">
-                                                    <Input className="h-12 pl-10 bg-gray-50 border-none rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="Sesuai KTP" />
+                                                    <Input className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="Sesuai KTP" />
                                                     <HugeiconsIcon icon={UserIcon} size={18} className="absolute left-3 top-3.5 text-gray-300" />
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</Label>
                                                 <div className="relative">
-                                                    <Input className="h-12 pl-10 bg-gray-50 border-none rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="email@contoh.com" />
+                                                    <Input className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="email@contoh.com" />
                                                     <HugeiconsIcon icon={Mail} size={18} className="absolute left-3 top-3.5 text-gray-300" />
                                                 </div>
                                             </div>
                                             <div className="space-y-2">
                                                 <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nomor WhatsApp</Label>
                                                 <div className="relative">
-                                                    <Input className="h-12 pl-10 bg-gray-50 border-none rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="0812xxxx" />
+                                                    <Input className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="0812xxxx" />
                                                     <HugeiconsIcon icon={Phone} size={18} className="absolute left-3 top-3.5 text-gray-300" />
                                                 </div>
                                             </div>
@@ -120,9 +125,20 @@ export default function BookingPage() {
                             </div>
 
                             <div className="pt-6 border-t border-white/10 flex justify-between items-end">
-                                <div className="flex flex-col">
-                                    <span className="text-[10px] font-bold uppercase text-blue-300 tracking-widest">Total Bayar</span>
-                                    <span className="text-2xl font-black text-white">Rp {total_price.toLocaleString()}</span>
+                                <div className="flex flex-col w-full">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="font-bold text-blue-300 tracking-widest">Subtotal</span>
+                                        <span className="text-2xl font-black text-white">Rp {total_price.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="font-bold text-blue-300 tracking-widest">Biaya aplikasi</span>
+                                        <span className="text-2xl font-black text-white">Rp {application_fee.toLocaleString()}</span>
+                                    </div>
+                                    <hr className=' border-white/10 my-5' />
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="font-bold text-blue-300 tracking-widest">Total Order</span>
+                                        <span className="text-2xl font-black text-white">Rp {(total_price + application_fee).toLocaleString()}</span>
+                                    </div>
                                 </div>
                             </div>
 
