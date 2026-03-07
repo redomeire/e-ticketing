@@ -15,7 +15,8 @@ class Order extends Model
         'user_id',
         'invoice_id',
         'payment_url',
-        'status'
+        'status',
+        'total_amount'
     ];
     public function user()
     {

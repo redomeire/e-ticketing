@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Jobs\RetrieveCheckoutJob;
 use App\Models\EventSeat;
 use App\Models\Order;
-use App\Models\OrderItem;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -30,7 +29,6 @@ class OrderController extends Controller
                 ->join('events', 'event_ticket_categories.event_id', '=', 'events.id')
                 ->select(
                     'orders.id',
-                    'event_seats.id as seat_id',
                     'orders.invoice_id',
                     'orders.status',
                     'orders.payment_url',
@@ -43,7 +41,6 @@ class OrderController extends Controller
                 ->where('orders.user_id', $user->id)
                 ->groupBy(
                     'orders.id',
-                    'event_seats.id',
                     'orders.invoice_id',
                     'orders.status',
                     'orders.payment_url',
@@ -61,10 +58,14 @@ class OrderController extends Controller
     }
     public function checkout(Request $request)
     {
-        // TODO: add automatic expire order and release seat if payment not made after 5 minutes
         try {
             $validator = Validator::make($request->all(), [
-                'seat_id' => 'required|exists:event_seats,id',
+                'attendees' => 'required|array|min:1',
+                'attendees.*.name' => 'required|string|max:255',
+                'attendees.*.email' => 'required|email|max:255',
+                'attendees.*.phone' => 'required|string|max:20',
+                'attendees.*.is_male' => 'required|boolean',
+                'attendees.*.seat_id' => 'required|exists:event_seats,id',
             ]);
 
             if ($validator->fails()) {
@@ -73,38 +74,67 @@ class OrderController extends Controller
 
             $validated = $validator->validated();
             $user = auth()->user();
+            $seat_ids = collect($validated['attendees'])->pluck('seat_id')->toArray();
 
-            $response = DB::transaction(function () use ($validated, $user) {
-                $seat = EventSeat::where('id', $validated['seat_id'])
+            $response = DB::transaction(function () use ($validated, $user, $seat_ids) {
+                $seats = EventSeat::whereIn('id', $seat_ids)
+                    ->where(function ($query) {
+                        $query->whereNull('locked_until')
+                            ->orWhere('locked_until', '<', now());
+                    })
                     ->lockForUpdate()
-                    ->first();
-                $is_locked = $seat->locked_until && $seat->locked_until > now();
-                if (!$seat->is_available || $is_locked) {
-                    throw new \Exception('Sorry, this seat is currently taken. Please choose another one.');
+                    ->get();
+                if ($seats->count() !== count(array_unique($seat_ids))) {
+                    throw new \Exception('One or more selected seats are no longer available. Please choose different seats.');
                 }
-                $seat->update([
+                EventSeat::whereIn('id', $seat_ids)->update([
                     'is_available' => false,
                     'locked_until' => now()->addMinutes(5),
                 ]);
-                $price = $seat->category->base_price;
-                $application_fee = $price * 0.1;
+
+                // fees
+                $subtotal = $seats->sum(function ($seat) {
+                    return $seat->category->base_price;
+                });
+                $application_fee = $subtotal * 0.1;
+                $total_amount = $subtotal + $application_fee;
 
                 $order = Order::create([
                     'user_id' => $user->id,
                     'invoice_id' => uniqid('INV-'),
                     'status' => 'pending',
-                    'total_amount' => $price + $application_fee
+                    'total_amount' => $total_amount,
                 ]);
-                $order_item = OrderItem::create([
-                    'order_id' => $order->id,
-                    'seat_id' => $seat->id,
-                    'price_at_purchase' => $price + $application_fee,
-                ]);
-                $invoice_url = $this->createInvoice($order, $order_item);
+                $order_items = [];
+                $attendees_data = [];
+                $now = now();
+
+                foreach ($validated['attendees'] as $attendee) {
+                    $current_seat = $seats->firstWhere('id', $attendee['seat_id']);
+
+                    $order_items[] = [
+                        'order_id' => $order->id,
+                        'seat_id' => $attendee['seat_id'],
+                        'price_at_purchase' => $current_seat->category->base_price * 1.1,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ];
+
+                    $attendees_data[] = array_merge($attendee, [
+                        'order_id' => $order->id,
+                        'created_at' => $now,
+                        'updated_at' => $now,
+                    ]);
+                }
+
+                DB::table('order_items')->insert($order_items);
+                DB::table('attendees')->insert($attendees_data);
+
+                $invoice_url = $this->createInvoice($order);
                 $order->update(['payment_url' => $invoice_url]);
                 return [
+                    'order_id' => $order->id,
                     'invoice_url' => $invoice_url,
-                    'order_id' => $order->id
                 ];
             });
 
@@ -123,7 +153,7 @@ class OrderController extends Controller
             if ($order->status !== 'pending') {
                 return $this->sendError('Only pending orders can be repaid', [], 400);
             }
-            $invoice_url = $this->createInvoice($order, $order->orderItem->first());
+            $invoice_url = $this->createInvoice($order);
             $order->update(['payment_url' => $invoice_url]);
             return $this->sendResponse(['invoice_url' => $invoice_url], 'New Payment URL created');
         } catch (\Exception $e) {
@@ -145,9 +175,10 @@ class OrderController extends Controller
             ], 500);
         }
     }
-    private function createInvoice(Order $order, OrderItem $order_item)
+    private function createInvoice(Order $order)
     {
-        $invoice = $this->payment_service->createInvoice($order, $order_item, auth()->user());
+        $order->load('orderItem.seat');
+        $invoice = $this->payment_service->createInvoice($order, auth()->user());
         return $invoice->getInvoiceUrl();
     }
 }

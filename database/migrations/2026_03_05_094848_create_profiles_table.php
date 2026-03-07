@@ -12,6 +12,9 @@ return new class extends Migration {
     {
         Schema::create('profiles', function (Blueprint $table) {
             $table->id();
+            $table->string('phone')->nullable();
+            $table->boolean('is_male')->nullable();
+            $table->date('date_of_birth')->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->softDeletesTz('deleted_at', precision: 0);
             $table->timestamps();

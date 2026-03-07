@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Attendee;
 use App\Models\EventSeat;
 use App\Models\Order;
 use Illuminate\Console\Command;
@@ -28,38 +29,47 @@ class ReleaseExpiredOrder extends Command
      */
     public function handle()
     {
-        $expiry_threshold = now()->subMinutes(5);
+        $threshold = now()->subMinutes(5);
 
-        $expired_orders = Order::where('status', 'pending')
-            ->where('created_at', '<', $expiry_threshold)
-            ->whereNotNull('payment_url')
-            ->with('orderItem:id,order_id,seat_id')
-            ->get();
+        try {
+            DB::transaction(function () use ($threshold) {
+                $expired_orders = Order::where('status', 'pending')
+                    ->where('created_at', '<', $threshold)
+                    ->with('orderItem')
+                    ->get();
 
-        if ($expired_orders->isEmpty()) {
-            return;
+                if ($expired_orders->isNotEmpty()) {
+                    $order_ids = $expired_orders->pluck('id');
+                    $seat_ids = $expired_orders->flatMap(fn($o) => $o->orderItem->pluck('seat_id'))->unique();
+
+                    Order::whereIn('id', $order_ids)->update(['status' => 'expired', 'payment_url' => null]);
+                    Attendee::whereIn('order_id', $order_ids)->delete();
+
+                    if ($seat_ids->isNotEmpty()) {
+                        EventSeat::whereIn('id', $seat_ids)->update(['is_available' => true, 'locked_until' => null]);
+                    }
+                    $this->info("Cleared " . $order_ids->count() . " expired pending orders.");
+                }
+
+                $zombie_seats_count = EventSeat::where('is_available', false)
+                    ->where('locked_until', '<', now())
+                    ->whereDoesntHave('orderItem.order', function ($query) {
+                        $query->where('status', 'paid');
+                    })
+                    ->update([
+                        'is_available' => true,
+                        'locked_until' => null,
+                        'updated_at' => now()
+                    ]);
+
+                if ($zombie_seats_count > 0) {
+                    $this->warn("Released {$zombie_seats_count} orphan/failed locks.");
+                }
+            });
+
+            $this->info('Cleanup successful.');
+        } catch (\Exception $e) {
+            $this->error("Error: " . $e->getMessage());
         }
-
-        $order_ids = $expired_orders->pluck('id');
-        $seat_ids = $expired_orders->flatMap(function ($order) {
-            return $order->orderItem->pluck('seat_id');
-        })->unique();
-
-        DB::transaction(function () use ($order_ids, $seat_ids) {
-            Order::whereIn('id', $order_ids)->update([
-                'payment_url' => null,
-                'status' => 'expired',
-                'updated_at' => now()
-            ]);
-
-            if ($seat_ids->isNotEmpty()) {
-                EventSeat::whereIn('id', $seat_ids)->update([
-                    'is_available' => true,
-                    'locked_until' => null,
-                    'updated_at' => now()
-                ]);
-            }
-        });
-        $this->info(count($order_ids) . ' Expired seats released successfully.');
     }
 }

@@ -16,17 +16,26 @@ class PaymentService
         $this->invoiceApi = $invoiceApi;
     }
 
-    public function createInvoice(Order $order, OrderItem $order_item, User $user)
+    public function createInvoice(Order $order, User $user)
     {
         try {
+            $items = $order->orderItem->map(function (OrderItem $item) {
+                return [
+                    'name' => "Seat " . ($item->seat->seat_number ?? 'N/A') . ' - ' . ($item->seat->category->name ?? 'N/A'),
+                    'quantity' => 1,
+                    'price' => $item->price_at_purchase,
+                ];
+            })->toArray();
+
             $params = [
                 'external_id' => $order->invoice_id,
-                'amount' => $order_item->price_at_purchase,
+                'amount' => $order->total_amount,
                 'description' => "Order #" . $order->invoice_id,
                 'customer' => [
                     'given_names' => $user->name,
                     'email' => $user->email,
                 ],
+                'items' => $items,
                 'currency' => 'IDR',
                 'invoice_duration' => 5 * 60,
                 'success_redirect_url' => '' . config('app.additional_config_files.frontend_url') . '/payment/checkout/success',

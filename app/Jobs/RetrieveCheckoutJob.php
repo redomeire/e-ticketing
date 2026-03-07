@@ -4,10 +4,12 @@ namespace App\Jobs;
 
 use App\Mail\PaymentFailed;
 use App\Mail\PaymentSuccess;
+use App\Models\EventSeat;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -30,89 +32,64 @@ class RetrieveCheckoutJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            Log::info('Payment webhook triggered. Payload:', $this->payload);
-
             $status = $this->payload['status'] ?? null;
-            $invoiceId = $this->payload['external_id'] ?? null;
+            $invoice_id = $this->payload['external_id'] ?? null;
 
-            if (!$status || !$invoiceId) {
-                Log::error('Payload webhook invalid. Missing id or status', $this->payload);
+            if (!$status || !$invoice_id) {
+                Log::error('Payload webhook invalid.', $this->payload);
                 return;
             }
-
-            $order = Order::where('invoice_id', $invoiceId)->first();
-
-            if (!$order) {
-                Log::warning("Invoice with ID '{$invoiceId}' not found.");
+            $order = Order::where('invoice_id', $invoice_id)->first();
+            if (!$order || $order->status === 'paid') {
+                Log::warning("Order not found or already paid: {$invoice_id}");
                 return;
             }
-
-            if ($order->status === 'paid') {
-                Log::warning("Invoice with ID #{$order->invoice_id} already has 'paid' status, reject webhook.");
-                return;
-            }
-
-            if ($status === 'PAID') {
+            $status_upper = strtoupper($status);
+            DB::transaction(function () use ($order, $status_upper, $invoice_id) {
                 Payment::create([
                     'order_id' => $order->id,
-                    'external_id' => $invoiceId,
+                    'external_id' => $invoice_id,
                     'payment_method' => $this->payload['payment_method'] ?? 'unknown',
                     'payment_channel' => $this->payload['payment_channel'] ?? 'unknown',
                     'amount' => $this->payload['amount'] ?? 0,
-                    'status' => 'paid',
+                    'status' => strtolower($status_upper),
                     'paid_at' => now(),
                 ]);
-                $order->status = 'paid';
-                $order->save();
-                Log::info("Invoice with ID #{$order->invoice_id} successfully changed to 'paid'.");
-                if ($order) {
-                    $user = $order->user;
-                    Mail::to($user->email)->send(new PaymentSuccess(order: $order));
-                    Log::info("Payment success email sent to user with email {$user->email} for order #{$order->invoice_id}.");
-                }
-            } elseif ($status === 'EXPIRED') {
-                Log::warning(message: "Invoice #{$order->invoice_id} has been expired.");
+
                 $order->update([
-                    'status' => 'expired',
-                    'payment_url' => null
-                ]);
-                // create payment
-                Payment::create([
-                    'order_id' => $order->id,
-                    'external_id' => $invoiceId,
-                    'payment_method' => $this->payload['payment_method'] ?? 'unknown',
-                    'payment_channel' => $this->payload['payment_channel'] ?? 'unknown',
-                    'amount' => $this->payload['amount'] ?? 0,
-                    'status' => 'expired',
-                    'paid_at' => now(),
-                ]);
-            } elseif ($status === 'FAILED') {
-                Log::warning("Invoice with ID #{$order->invoice_id} gagal.");
-                $order->update([
-                    'status' => 'failed',
+                    'status' => strtolower($status_upper),
                     'payment_url' => null
                 ]);
 
-                // create payment
-                Payment::create([
-                    'order_id' => $order->id,
-                    'external_id' => $invoiceId,
-                    'payment_method' => $this->payload['payment_method'] ?? 'unknown',
-                    'payment_channel' => $this->payload['payment_channel'] ?? 'unknown',
-                    'amount' => $this->payload['amount'] ?? 0,
-                    'status' => 'failed',
-                    'paid_at' => now(),
-                ]);
+                if ($status_upper === 'PAID') {
+                    $this->update_seats_status($order->id, false, null);
+                    Mail::to($order->user->email)->send(new PaymentSuccess($order));
+                    Log::info("Order #{$order->invoice_id} marked as PAID.");
+                } else if (in_array($status_upper, ['EXPIRED', 'FAILED'])) {
+                    $this->update_seats_status($order->id, true, null);
 
-                if ($order) {
-                    $user = $order->user;
-                    Mail::to($user->email)->send(new PaymentFailed($order));
-                    Log::info("Payment failed email sent to user with email {$user->email} for order #{$order->invoice_id}.");
+                    $order->attendees()->delete();
+
+                    if ($status_upper === 'FAILED') {
+                        Mail::to($order->user->email)->send(new PaymentFailed($order));
+                    }
+                    Log::warning("Order #{$order->invoice_id} released due to {$status_upper}.");
                 }
-            }
+            });
+
         } catch (\Throwable $th) {
-            Log::error('Error processing Xendit webhook: ' . $th->getMessage(), $this->payload);
+            Log::error('Error processing Xendit webhook: ' . $th->getMessage());
             throw $th;
         }
+    }
+    private function update_seats_status(int $order_id, bool $is_available, $locked_until): void
+    {
+        EventSeat::whereHas('orderItems', function ($query) use ($order_id) {
+            $query->where('order_id', $order_id);
+        })->update([
+                    'is_available' => $is_available,
+                    'locked_until' => $locked_until,
+                    'updated_at' => now()
+                ]);
     }
 }

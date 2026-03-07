@@ -11,6 +11,9 @@ class Profile extends Model
     use SoftDeletes;
     protected $fillable = [
         "user_id",
+        'phone',
+        'is_male',
+        'date_of_birth',
     ];
     public function user()
     {

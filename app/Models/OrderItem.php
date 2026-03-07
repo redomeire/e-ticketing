@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Attendee;
 use App\Models\EventSeat;
 use App\Models\Order;
 use Illuminate\Database\Eloquent\Model;
@@ -22,5 +23,9 @@ class OrderItem extends Model
     public function seat()
     {
         return $this->belongsTo(related: EventSeat::class);
+    }
+    public function attendee()
+    {
+        return $this->hasOne(Attendee::class);
     }
 }
