@@ -20,6 +20,7 @@ import {
     SheetTrigger
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils/cn";
+import Link from 'next/link';
 
 const Header = () => {
     const [is_search_open, set_is_search_open] = useState(false);
@@ -46,17 +47,13 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* 2. MAIN HEADER */}
-            <div className="container mx-auto flex h-20 md:h-24 items-center justify-between gap-6 px-4">
-                {/* Logo Section - Ukuran lebih tegas */}
-                <div className="flex items-center gap-2 shrink-0">
+            <div className="container mx-auto flex h-20 items-center justify-between gap-6 px-4">
+                <Link href="/" className="flex items-center gap-2 shrink-0">
                     <h1 className="text-3xl font-black italic tracking-tighter uppercase">LOKET</h1>
                     <span className="bg-blue-600 px-2 py-1 rounded text-[11px] font-bold uppercase tracking-wider">
                         12 Tahun
                     </span>
-                </div>
-
-                {/* Desktop Search Bar - Input lebih tinggi dan teks lebih besar */}
+                </Link>
                 <div className="relative flex-1 max-w-2xl group hidden md:flex">
                     <Input
                         placeholder="Cari event seru di sini"
@@ -69,8 +66,6 @@ const Header = () => {
                         <HugeiconsIcon icon={Search} size={20} />
                     </Button>
                 </div>
-
-                {/* Navigation Actions (Desktop) - Font size ditingkatkan ke text-sm/base */}
                 <nav className="hidden xl:flex items-center gap-4">
                     {nav_links.map((link) => (
                         <Button key={link.name} variant="ghost" className="text-white hover:bg-white/10 gap-2 text-sm font-semibold">
@@ -87,8 +82,6 @@ const Header = () => {
                         </Button>
                     </div>
                 </nav>
-
-                {/* Mobile Controls */}
                 <div className="flex xl:hidden items-center gap-2">
                     <Button
                         variant="ghost"
@@ -137,8 +130,6 @@ const Header = () => {
                     </Sheet>
                 </div>
             </div>
-
-            {/* Mobile Search Overlay */}
             <div className={cn(
                 "md:hidden bg-[#001b41] border-b border-white/10 px-4 transition-all duration-300 overflow-hidden",
                 is_search_open ? "h-20 py-4" : "h-0 py-0 border-none"
@@ -155,14 +146,13 @@ const Header = () => {
                 </div>
             </div>
 
-            {/* 3. TRENDING TAGS BAR - Ukuran ditingkatkan ke text-xs/sm */}
-            <div className="container mx-auto pb-5 px-4 flex gap-6 text-xs text-white/50 font-medium overflow-x-auto no-scrollbar">
+            {/* <div className="container mx-auto pb-5 px-4 flex gap-6 text-xs text-white/50 font-medium overflow-x-auto no-scrollbar">
                 {['#Promo_Indodana', '#LOKETPlus', '#LOKETScreen', '#LOKET_Promo', '#Loket'].map((tag) => (
                     <span key={tag} className="hover:text-white cursor-pointer transition-colors whitespace-nowrap italic">
                         {tag}
                     </span>
                 ))}
-            </div>
+            </div> */}
         </header>
     );
 };
