@@ -24,8 +24,4 @@ class OrderItem extends Model
     {
         return $this->belongsTo(related: EventSeat::class);
     }
-    public function attendee()
-    {
-        return $this->hasOne(Attendee::class);
-    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Attendee;
 use App\Models\EventTicketCategory;
 use App\Models\OrderItem;
 use App\Observers\EventSeatObserver;
@@ -28,5 +29,9 @@ class EventSeat extends Model
     public function orderItem()
     {
         return $this->hasOne(OrderItem::class, 'seat_id');
+    }
+    public function attendee()
+    {
+        return $this->hasOne(Attendee::class, 'seat_id');
     }
 }

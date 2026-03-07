@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Attendee;
 use App\Models\Event;
 use App\Models\EventSeat;
 use App\Models\EventTicketCategory;
@@ -262,5 +263,10 @@ class EventController extends Controller
                 'error' => $e->getMessage(),
             ], 500);
         }
+    }
+    public function getAttendees()
+    {
+        $attendees = Attendee::all();
+        return $this->sendResponse($attendees, 'Attendees retrieved successfully');
     }
 }

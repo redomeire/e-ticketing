@@ -35,35 +35,42 @@ class ReleaseExpiredOrder extends Command
             DB::transaction(function () use ($threshold) {
                 $expired_orders = Order::where('status', 'pending')
                     ->where('created_at', '<', $threshold)
-                    ->with('orderItem')
+                    ->with('orderItem') // Gunakan plural jika relasinya hasMany
                     ->get();
 
                 if ($expired_orders->isNotEmpty()) {
                     $order_ids = $expired_orders->pluck('id');
-                    $seat_ids = $expired_orders->flatMap(fn($o) => $o->orderItem->pluck('seat_id'))->unique();
+                    $seat_ids = $expired_orders->flatMap(fn($order) => $order->orderItem->pluck('seat_id'))->unique();
 
                     Order::whereIn('id', $order_ids)->update(['status' => 'expired', 'payment_url' => null]);
                     Attendee::whereIn('order_id', $order_ids)->delete();
-
                     if ($seat_ids->isNotEmpty()) {
                         EventSeat::whereIn('id', $seat_ids)->update(['is_available' => true, 'locked_until' => null]);
                     }
                     $this->info("Cleared " . $order_ids->count() . " expired pending orders.");
                 }
 
-                $zombie_seats_count = EventSeat::where('is_available', false)
-                    ->where('locked_until', '<', now())
+                $zombie_seats = EventSeat::where('is_available', false)
+                    ->where('locked_until', '<=', now())
                     ->whereDoesntHave('orderItem.order', function ($query) {
                         $query->where('status', 'paid');
                     })
-                    ->update([
+                    ->get();
+
+                if ($zombie_seats->isNotEmpty()) {
+                    $zombie_seat_ids = $zombie_seats->pluck('id');
+
+                    Attendee::whereIn('seat_id', $zombie_seat_ids)
+                        ->whereNull('deleted_at')
+                        ->delete();
+
+                    EventSeat::whereIn('id', $zombie_seat_ids)->update([
                         'is_available' => true,
                         'locked_until' => null,
                         'updated_at' => now()
                     ]);
 
-                if ($zombie_seats_count > 0) {
-                    $this->warn("Released {$zombie_seats_count} orphan/failed locks.");
+                    $this->warn("Released " . $zombie_seat_ids->count() . " orphan/failed locks and cleared ghost attendees.");
                 }
             });
 

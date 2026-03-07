@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Attendee;
 use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\User;
@@ -29,5 +30,9 @@ class Order extends Model
     public function payment()
     {
         return $this->hasMany(Payment::class);
+    }
+    public function attendee()
+    {
+        return $this->hasMany(Attendee::class);
     }
 }

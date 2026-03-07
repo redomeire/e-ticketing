@@ -2,7 +2,8 @@
 
 namespace App\Models;
 
-use App\Models\OrderItem;
+use App\Models\EventSeat;
+use App\Models\Order;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -18,12 +19,12 @@ class Attendee extends Model
         'order_id',
         'seat_id',
     ];
-    public function orderItem()
+    public function order()
     {
-        return $this->belongsTo(OrderItem::class);
+        return $this->belongsTo(Order::class);
     }
-    public function user()
+    public function seat()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(EventSeat::class);
     }
 }
