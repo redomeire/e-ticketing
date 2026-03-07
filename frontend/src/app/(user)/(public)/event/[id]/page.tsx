@@ -12,6 +12,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import Link from "next/link";
 
 const event_data = {
     title: "The Grand Line Trials: One Piece Fan Fest 2026",
@@ -158,9 +159,11 @@ export default function Page() {
                                     </div>
                                 </div>
                             </div>
-                            <Button className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold shadow-lg shadow-blue-200">
-                                Beli Tiket Sekarang
-                            </Button>
+                            <Link href="/event/1/order" className="w-full">
+                                <Button className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold shadow-lg shadow-blue-200">
+                                    Beli Tiket Sekarang
+                                </Button>
+                            </Link>
                             <div>
                                 <h2 className="mt-5 mb-3 text-xl font-bold drop-shadow-sm">
                                     Bagikan Event
