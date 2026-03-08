@@ -34,17 +34,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils/cn";
 import Link from 'next/link';
+import { useLogout } from '@/modules/auth/hooks/useAuthRepository';
 
 const Header = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const { data: session, status } = useSession();
     const isLoading = status === "loading";
     const isAuthenticated = status === "authenticated";
+    const { mutateAsync: logout } = useLogout({});
 
     const navLinks = [
         { name: 'Buat Event', icon: Calendar, href: '#' },
         { name: 'Jelajah Event', icon: Compass, href: '#' },
     ];
+
+    const handleLogout = async () => {
+        await logout();
+        signOut();
+    }
 
     return (
         <header className="w-full bg-[#002558] text-white sticky top-0 z-50">
@@ -70,6 +77,7 @@ const Header = () => {
                 </Link>
                 <div className="relative flex-1 max-w-2xl group hidden md:flex">
                     <Input
+                        name="search"
                         placeholder="Cari event seru di sini"
                         className="bg-white/10 border-none text-white placeholder:text-white/50 h-12 text-base pl-5 focus-visible:ring-2 focus-visible:ring-blue-500"
                     />
@@ -129,7 +137,7 @@ const Header = () => {
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         className="cursor-pointer gap-2 py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50"
-                                        onClick={() => signOut()}
+                                        onClick={handleLogout}
                                     >
                                         <HugeiconsIcon icon={Logout} size={18} />
                                         <span>Keluar</span>
@@ -192,7 +200,7 @@ const Header = () => {
                                 <div className="flex flex-col gap-4">
                                     {isAuthenticated ? (
                                         <Button
-                                            onClick={() => signOut()}
+                                            onClick={handleLogout}
                                             variant="outline"
                                             className="w-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white h-14 text-lg gap-2"
                                         >
@@ -225,6 +233,7 @@ const Header = () => {
             )}>
                 <div className="relative">
                     <Input
+                        name="mobile-search"
                         autoFocus
                         placeholder="Cari event..."
                         className="bg-white/10 border-white/20 text-white h-12 text-base pr-12"

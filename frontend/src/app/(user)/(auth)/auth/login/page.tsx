@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -16,19 +16,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from 'next-auth/react';
 import { toast } from 'sonner';
+import { useForm } from 'react-hook-form';
+import loginSchema, { LoginFormData } from '@/modules/auth/schema/login.schema';
+import { zodResolver } from '@hookform/resolvers/zod';
+import FormProviderWrapper from '@/components/provider/FormProviderWrapper';
 
 export default function Page() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-    const [loginData, setLoginData] = useState({
-        email: '',
-        password: ''
+    const form = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: "",
+            password: ""
+        }
     });
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (data: LoginFormData) => {
         const result = await signIn("credentials", {
-            email: loginData.email,
-            password: loginData.password,
+            ...data,
             redirect: false
         })
         if (result?.error) {
@@ -52,60 +57,55 @@ export default function Page() {
                     <h2 className="text-3xl font-black text-[#002558] mb-2 tracking-tight">Selamat Datang</h2>
                     <p className="text-gray-500 font-medium">Silakan masukkan akun Anda untuk melanjutkan.</p>
                 </div>
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-bold text-gray-700">Email</Label>
-                        <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                <HugeiconsIcon icon={Mail} size={20} />
+                <FormProviderWrapper form={form}>
+                    <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                        <div className="space-y-2">
+                            <Label htmlFor="email" className="text-sm font-bold text-gray-700">Email</Label>
+                            <div className="relative">
+                                <Input
+                                    id="email"
+                                    type="email"
+                                    name="email"
+                                    withValidation
+                                    placeholder="contoh@email.com"
+                                    className="h-14 pl-12 bg-gray-50 border-gray-200 focus-visible:ring-blue-600 text-base rounded-xl"
+                                    startIcon={<HugeiconsIcon icon={Mail} size={20} />}
+                                />
                             </div>
-                            <Input
-                                id="email"
-                                type="email"
-                                placeholder="contoh@email.com"
-                                className="h-14 pl-12 bg-gray-50 border-gray-200 focus-visible:ring-blue-600 text-base rounded-xl"
-                                value={loginData.email}
-                                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
-                                required
-                            />
                         </div>
-                    </div>
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <Label htmlFor="password" className="text-sm font-bold text-gray-700">Password</Label>
-                            <a href="#" className="text-xs font-bold text-blue-600 hover:underline">Lupa Password?</a>
-                        </div>
-                        <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                                <HugeiconsIcon icon={Lock} size={20} />
+                        <div className="space-y-2">
+                            <div className="flex justify-between">
+                                <Label htmlFor="password" className="text-sm font-bold text-gray-700">Password</Label>
+                                <a href="#" className="text-xs font-bold text-blue-600 hover:underline">Lupa Password?</a>
                             </div>
-                            <Input
-                                id="password"
-                                type={isPasswordVisible ? "text" : "password"}
-                                placeholder="Masukkan password Anda"
-                                className="h-14 pl-12 pr-12 bg-gray-50 border-gray-200 focus-visible:ring-blue-600 text-base rounded-xl"
-                                value={loginData.password}
-                                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                                required
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                                <HugeiconsIcon icon={isPasswordVisible ? ViewOff : ViewIcon} size={20} />
-                            </button>
+                            <div className="relative">
+                                <Input
+                                    id="password"
+                                    type={isPasswordVisible ? "text" : "password"}
+                                    name="password"
+                                    withValidation
+                                    placeholder="Masukkan password Anda"
+                                    className="h-14 pl-12 pr-12 bg-gray-50 border-gray-200 focus-visible:ring-blue-600 text-base rounded-xl"
+                                    startIcon={<HugeiconsIcon icon={Lock} size={20} />}
+                                    endIcon={
+                                        <HugeiconsIcon
+                                            icon={isPasswordVisible ? ViewOff : ViewIcon}
+                                            size={20}
+                                            onClick={() => setIsPasswordVisible(!isPasswordVisible)}
+                                        />
+                                    }
+                                />
+                            </div>
                         </div>
-                    </div>
 
-                    <Button
-                        type="submit"
-                        className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold shadow-lg shadow-blue-200 rounded-xl transition-all active:scale-95"
-                    >
-                        Masuk Sekarang
-                    </Button>
-                </form>
+                        <Button
+                            type="submit"
+                            className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold shadow-lg shadow-blue-200 rounded-xl transition-all active:scale-95"
+                        >
+                            Masuk Sekarang
+                        </Button>
+                    </form>
+                </FormProviderWrapper>
 
                 <div className="relative my-10">
                     <div className="absolute inset-0 flex items-center">

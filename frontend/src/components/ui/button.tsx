@@ -1,6 +1,10 @@
+"use client"
+
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Slot } from "radix-ui"
+import { Slot } from "@radix-ui/react-slot" // Pastikan import dari @radix-ui/react-slot
+import { HugeiconsIcon } from "@hugeicons/react"
+import { Loading03Icon as LoadingIcon } from '@hugeicons/core-free-icons'
 
 import { cn } from "@/lib/utils/cn"
 
@@ -39,27 +43,47 @@ const buttonVariants = cva(
   }
 )
 
-function Button({
-  className,
-  variant = "default",
-  size = "default",
-  asChild = false,
-  ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
-  const Comp = asChild ? Slot.Root : "button"
-
-  return (
-    <Comp
-      data-slot="button"
-      data-variant={variant}
-      data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
-      {...props}
-    />
-  )
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  VariantProps<typeof buttonVariants> {
+  asChild?: boolean
+  isLoading?: boolean // Properti camelCase untuk frontend
 }
+
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className, variant, size, asChild = false, isLoading = false, children, disabled, ...props }, ref) => {
+    const Comp = asChild ? Slot : "button"
+
+    return (
+      <Comp
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        data-loading={isLoading}
+        aria-busy={isLoading}
+        disabled={isLoading || disabled}
+        className={cn(buttonVariants({ variant, size, className }))}
+        ref={ref}
+        {...props}
+      >
+        {isLoading ? (
+          <>
+            <HugeiconsIcon
+              icon={LoadingIcon}
+              className="animate-spin"
+              size={size === "xs" || size === "icon-xs" ? 12 : 16}
+            />
+            {size !== "icon" && size !== "icon-xs" && size !== "icon-sm" && size !== "icon-lg" && (
+              <span>Loading...</span>
+            )}
+          </>
+        ) : (
+          children
+        )}
+      </Comp>
+    )
+  }
+)
+Button.displayName = "Button"
 
 export { Button, buttonVariants }

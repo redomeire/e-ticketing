@@ -28,7 +28,7 @@ export default function withAuth(
 
         if (session) {
             if (isAuthPath) {
-                return NextResponse.redirect(new URL("/dashboard", request.url));
+                return NextResponse.redirect(new URL("/", request.url));
             }
         } else {
             if (isProtectedPath) {

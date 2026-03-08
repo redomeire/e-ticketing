@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils/cn";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "sonner";
 import { SessionProvider } from "next-auth/react";
+import QueryClientProviderWrapper from "@/providers/QueryClientProvider";
 
 const figtree = Figtree({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -34,10 +35,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>
-          <TooltipProvider>
-            {children}
-            <Toaster />
-          </TooltipProvider>
+          <QueryClientProviderWrapper>
+            <TooltipProvider>
+              {children}
+              <Toaster />
+            </TooltipProvider>
+          </QueryClientProviderWrapper>
         </SessionProvider>
       </body>
     </html>
