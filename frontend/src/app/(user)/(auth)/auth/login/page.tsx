@@ -28,7 +28,8 @@ export default function Page() {
         defaultValues: {
             email: "",
             password: ""
-        }
+        },
+        mode: "onBlur"
     });
 
     const handleSubmit = async (data: LoginFormData) => {
@@ -100,7 +101,12 @@ export default function Page() {
 
                         <Button
                             type="submit"
+                            isLoading={form.formState.isSubmitting}
                             className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold shadow-lg shadow-blue-200 rounded-xl transition-all active:scale-95"
+                            disabled={
+                                form.formState.isSubmitting
+                                || !form.formState.isValid
+                            }
                         >
                             Masuk Sekarang
                         </Button>
