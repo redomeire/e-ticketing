@@ -13,15 +13,15 @@ class EventSeat extends Model
     use SoftDeletes;
     protected $fillable = [
         'event_id',
-        'category_id',
+        'ticket_category_id',
         'seat_number',
         'is_available',
         'locked_until',
         'price',
     ];
-    public function category()
+    public function ticketCategory()
     {
-        return $this->belongsTo(EventTicketCategory::class, 'category_id');
+        return $this->belongsTo(EventTicketCategory::class, 'ticket_category_id');
     }
     public function orderItem()
     {

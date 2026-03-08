@@ -21,7 +21,7 @@ class PaymentService
         try {
             $items = $order->orderItem->map(function (OrderItem $item) {
                 return [
-                    'name' => "Seat " . ($item->seat->seat_number ?? 'N/A') . ' - ' . ($item->seat->category->name ?? 'N/A'),
+                    'name' => "Seat " . ($item->seat->seat_number ?? 'N/A') . ' - ' . ($item->seat->ticketCategory->name ?? 'N/A'),
                     'quantity' => 1,
                     'price' => $item->price_at_purchase,
                 ];

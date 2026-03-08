@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('event_seats', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('category_id')
+            $table->foreignId('ticket_category_id')
                 ->constrained('event_ticket_categories')
                 ->onDelete('cascade');
             $table->string('seat_number', 4);
@@ -22,7 +22,7 @@ return new class extends Migration {
             $table->timestamp('locked_until')->nullable();
             $table->softDeletesTz('deleted_at', precision: 0);
             $table->timestamps();
-            $table->unique(['category_id', 'row_index', 'column_index'], 'unique_seat_position');
+            $table->unique(['ticket_category_id', 'row_index', 'column_index'], 'unique_seat_position');
         });
     }
 

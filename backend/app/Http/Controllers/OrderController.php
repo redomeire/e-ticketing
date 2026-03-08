@@ -25,7 +25,7 @@ class OrderController extends Controller
             $orders = DB::table('orders')
                 ->join('order_items', 'orders.id', '=', 'order_items.order_id')
                 ->join('event_seats', 'order_items.seat_id', '=', 'event_seats.id')
-                ->join('event_ticket_categories', 'event_seats.category_id', '=', 'event_ticket_categories.id')
+                ->join('event_ticket_categories', 'event_seats.ticket_category_id', '=', 'event_ticket_categories.id')
                 ->join('events', 'event_ticket_categories.event_id', '=', 'events.id')
                 ->select(
                     'orders.id',
@@ -94,7 +94,7 @@ class OrderController extends Controller
 
                 // fees
                 $subtotal = $seats->sum(function ($seat) {
-                    return $seat->category->base_price;
+                    return $seat->ticketCategory->base_price;
                 });
                 $application_fee = $subtotal * 0.1;
                 $total_amount = $subtotal + $application_fee;
@@ -115,7 +115,7 @@ class OrderController extends Controller
                     $order_items[] = [
                         'order_id' => $order->id,
                         'seat_id' => $attendee['seat_id'],
-                        'price_at_purchase' => $current_seat->category->base_price * 1.1,
+                        'price_at_purchase' => $current_seat->ticketCategory->base_price * 1.1,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];

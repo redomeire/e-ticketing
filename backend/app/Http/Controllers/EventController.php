@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendee;
 use App\Models\Event;
+use App\Models\EventCategory;
 use App\Models\EventSeat;
 use App\Models\EventTicketCategory;
 use Illuminate\Http\Request;
@@ -49,13 +50,17 @@ class EventController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
-                'date' => 'required|date',
+                'start_time' => 'required|date|after:now',
+                'end_time' => 'required|date|after:start_time',
+                'location' => 'required|string|max:255',
                 'max_row_index' => 'required|integer|min:0',
                 'max_column_index' => 'required|integer|min:0',
-                'categories' => 'required|array|min:1',
-                'categories.*.name' => 'required|string|max:255',
-                'categories.*.base_price' => 'required|numeric|min:0',
-                'categories.*.quota' => 'required|integer|min:1',
+                'ticket_categories' => 'required|array|min:1',
+                'ticket_categories.*.name' => 'required|string|max:255',
+                'ticket_categories.*.base_price' => 'required|numeric|min:0',
+                'ticket_categories.*.quota' => 'required|integer|min:1',
+                'event_categories' => 'nullable|array',
+                'event_categories.*.name' => 'required|string|max:255',
             ]);
             if ($validator->fails()) {
                 return $this->sendError('Validation Error', $validator->errors(), 422);
@@ -65,13 +70,24 @@ class EventController extends Controller
             $event = Event::create(array_merge([
                 'name' => $validated['name'],
                 'description' => $validated['description'],
-                'date' => $validated['date'],
                 'max_row_index' => $validated['max_row_index'],
                 'max_column_index' => $validated['max_column_index'],
+                'start_time' => $validated['start_time'],
+                'end_time' => $validated['end_time'],
+                'location' => $validated['location'],
             ]));
-            $categories = [];
-            foreach ($validated['categories'] as $category) {
-                $categories[] = new EventTicketCategory([
+            // creating categories
+            $event_category_ids = [];
+            if (isset($validated['event_categories'])) {
+                foreach ($validated['event_categories'] as $category) {
+                    $event_category = EventCategory::firstOrCreate(['name' => $category['name']]);
+                    $event_category_ids[] = $event_category->id;
+                }
+                $event->categories()->sync($event_category_ids);
+            }
+            $ticket_categories = [];
+            foreach ($validated['ticket_categories'] as $category) {
+                $ticket_categories[] = new EventTicketCategory([
                     'event_id' => $event->id,
                     'name' => $category['name'],
                     'base_price' => $category['base_price'],
@@ -79,17 +95,18 @@ class EventController extends Controller
                 ]);
             }
             // if quota exceed the dot product of max_row_index and max_column_index, return error
-            $total_quota = array_sum(array_column($validated['categories'], 'quota'));
+            $total_quota = array_sum(array_column($validated['ticket_categories'], 'quota'));
             $max_capacity = ($validated['max_row_index'] + 1) * ($validated['max_column_index'] + 1);
             if ($total_quota > $max_capacity) {
                 DB::rollBack();
-                return $this->sendError('Validation Error', ['categories' => 'Total quota exceed the maximum capacity of the event'], 422);
+                return $this->sendError('Validation Error', ['ticket_categories' => 'Total quota exceed the maximum capacity of the event'], 422);
             }
-            $saved_categories = $event->categories()->saveMany($categories);
+            $saved_ticket_categories = $event->ticketCategories()->saveMany($ticket_categories);
             DB::commit();
             return $this->sendResponse([
                 'event' => $event,
-                'categories' => $saved_categories,
+                'ticket_categories' => $saved_ticket_categories,
+                'event_categories' => $event->categories()->get(),
             ], 'Event created successfully', 201);
         } catch (\Exception $e) {
             return $this->sendError('Error creating event', ['error' => $e->getMessage()], 500);
@@ -188,11 +205,11 @@ class EventController extends Controller
     public function getSeats($event_id)
     {
         try {
-            $seats = EventSeat::with(['category:id,name,base_price'])
-                ->whereHas('category', function ($query) use ($event_id) {
+            $seats = EventSeat::with(['ticketCategory:id,name,base_price'])
+                ->whereHas('ticketCategory', function ($query) use ($event_id) {
                     $query->where('event_id', $event_id);
                 })
-                ->select('id', 'category_id', 'seat_number', 'row_index', 'column_index', 'is_available', 'locked_until')
+                ->select('id', 'ticket_category_id', 'seat_number', 'row_index', 'column_index', 'is_available', 'locked_until')
                 ->get();
             return $this->sendResponse($seats, 'Seats retrieved successfully');
         } catch (\Exception $e) {
@@ -207,7 +224,7 @@ class EventController extends Controller
             $validator = Validator::make($request->all(), [
                 'event_id' => 'required|integer|exists:events,id',
                 'assignments' => 'required|array|min:1',
-                'assignments.*.category_id' => 'required|integer|exists:event_ticket_categories,id',
+                'assignments.*.ticket_category_id' => 'required|integer|exists:event_ticket_categories,id',
                 'assignments.*.seats' => 'required|array|min:1',
                 'assignments.*.seats.*.row' => 'required|integer|min:0',
                 'assignments.*.seats.*.column' => 'required|integer|min:0',
@@ -228,7 +245,7 @@ class EventController extends Controller
                         ], 422);
                     }
                     $data[] = [
-                        'category_id' => $group['category_id'],
+                        'ticket_category_id' => $group['ticket_category_id'],
                         'row_index' => $seat['row'],
                         'column_index' => $seat['column'],
                         'seat_number' => $seat['number'],

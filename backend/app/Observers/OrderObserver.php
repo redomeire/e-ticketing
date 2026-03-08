@@ -21,8 +21,8 @@ class OrderObserver
 
             $seat = EventSeat::with('category.event')->find($first_seat_id);
 
-            if ($seat && $seat->category && $seat->category->event) {
-                $event = $seat->category->event;
+            if ($seat && $seat->ticketCategory && $seat->ticketCategory->event) {
+                $event = $seat->ticketCategory->event;
 
                 if (!$event->is_active) {
                     Log::warning("Attempt to create order on inactive event: Event ID {$event->id}");

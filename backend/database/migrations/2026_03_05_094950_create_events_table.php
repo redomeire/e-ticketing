@@ -13,9 +13,14 @@ return new class extends Migration {
         Schema::create('events', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('slug')->unique()->after('name');
             $table->text('description')->nullable();
+            $table->text('terms_and_conditions')->nullable();
+            $table->string('cover_image_url')->nullable();
             $table->softDeletesTz('deleted_at', precision: 0);
-            $table->date('date');
+            $table->dateTime('start_time');
+            $table->dateTime('end_time');
+            $table->string('location');
             $table->integer('max_row_index');
             $table->integer('max_column_index');
             $table->boolean('is_active')->default(false);

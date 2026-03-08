@@ -25,6 +25,6 @@ class EventTicketCategory extends Model
     }
     public function seats()
     {
-        return $this->hasMany(EventSeat::class, 'category_id');
+        return $this->hasMany(EventSeat::class, 'ticket_category_id');
     }
 }
