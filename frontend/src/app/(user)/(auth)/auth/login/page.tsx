@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -14,18 +14,30 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { signIn } from 'next-auth/react';
+import { toast } from 'sonner';
 
 export default function Page() {
-    const [is_password_visible, set_is_password_visible] = useState(false);
-    const [login_data, set_login_data] = useState({
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [loginData, setLoginData] = useState({
         email: '',
         password: ''
     });
 
-    const handle_submit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        // Integrasi dengan Backend Laravel Anda
-        console.log("Login attempt:", login_data);
+        const result = await signIn("credentials", {
+            email: loginData.email,
+            password: loginData.password,
+            redirect: false
+        })
+        if (result?.error) {
+            console.log("Login failed:", result.error);
+            toast.error("Wrong email or password!");
+        } else {
+            toast.success("Login successful!");
+            window.location.reload();
+        }
     };
 
     return (
@@ -41,7 +53,7 @@ export default function Page() {
                     <p className="text-gray-500 font-medium">Silakan masukkan akun Anda untuk melanjutkan.</p>
                 </div>
 
-                <form onSubmit={handle_submit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="space-y-2">
                         <Label htmlFor="email" className="text-sm font-bold text-gray-700">Email</Label>
                         <div className="relative">
@@ -53,8 +65,8 @@ export default function Page() {
                                 type="email"
                                 placeholder="contoh@email.com"
                                 className="h-14 pl-12 bg-gray-50 border-gray-200 focus-visible:ring-blue-600 text-base rounded-xl"
-                                value={login_data.email}
-                                onChange={(e) => set_login_data({ ...login_data, email: e.target.value })}
+                                value={loginData.email}
+                                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
                                 required
                             />
                         </div>
@@ -70,19 +82,19 @@ export default function Page() {
                             </div>
                             <Input
                                 id="password"
-                                type={is_password_visible ? "text" : "password"}
+                                type={isPasswordVisible ? "text" : "password"}
                                 placeholder="Masukkan password Anda"
                                 className="h-14 pl-12 pr-12 bg-gray-50 border-gray-200 focus-visible:ring-blue-600 text-base rounded-xl"
-                                value={login_data.password}
-                                onChange={(e) => set_login_data({ ...login_data, password: e.target.value })}
+                                value={loginData.password}
+                                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
                                 required
                             />
                             <button
                                 type="button"
-                                onClick={() => set_is_password_visible(!is_password_visible)}
+                                onClick={() => setIsPasswordVisible(!isPasswordVisible)}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                             >
-                                <HugeiconsIcon icon={is_password_visible ? ViewOff : ViewIcon} size={20} />
+                                <HugeiconsIcon icon={isPasswordVisible ? ViewOff : ViewIcon} size={20} />
                             </button>
                         </div>
                     </div>

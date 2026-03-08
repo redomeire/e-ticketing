@@ -1,8 +1,7 @@
-import NextAuth, { DefaultSession } from "next-auth";
 import { DefaultJWT } from "next-auth/jwt";
 
 interface AppUser {
-    id: number;
+    id: string;
     email: string;
     name: string;
     isActive: boolean;
@@ -19,6 +18,8 @@ declare module "next-auth" {
         token: string;
         user: AppUser;
     }
+
+    interface User extends AuthUser { };
 }
 
 declare module "next-auth/jwt" {

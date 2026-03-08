@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useSession, signOut } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
     Search,
@@ -8,7 +9,11 @@ import {
     Compass,
     Menu,
     Close,
-    ChevronDown
+    UserIcon,
+    Logout,
+    ArrowDown01 as ChevronDown,
+    DashboardCircleIcon,
+    Settings02Icon as Settings
 } from '@hugeicons/core-free-icons';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,13 +24,24 @@ import {
     SheetTitle,
     SheetTrigger
 } from "@/components/ui/sheet";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils/cn";
 import Link from 'next/link';
 
 const Header = () => {
-    const [is_search_open, set_is_search_open] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const { data: session, status } = useSession();
+    const isLoading = status === "loading";
+    const isAuthenticated = status === "authenticated";
 
-    const nav_links = [
+    const navLinks = [
         { name: 'Buat Event', icon: Calendar, href: '#' },
         { name: 'Jelajah Event', icon: Compass, href: '#' },
     ];
@@ -45,7 +61,6 @@ const Header = () => {
                     </div>
                 </div>
             </div>
-
             <div className="container mx-auto flex h-20 items-center justify-between gap-6 px-4">
                 <Link href="/" className="flex items-center gap-2 shrink-0">
                     <h1 className="text-3xl font-black italic tracking-tighter uppercase">LOKET</h1>
@@ -66,23 +81,75 @@ const Header = () => {
                     </Button>
                 </div>
                 <nav className="hidden xl:flex items-center gap-4">
-                    {nav_links.map((link) => (
-                        <Button key={link.name} variant="ghost" className="text-white hover:bg-white/10 gap-2 text-sm font-semibold">
-                            <HugeiconsIcon icon={link.icon} size={18} /> {link.name}
-                        </Button>
-                    ))}
-
+                    {session?.user.role === "admin" ?
+                        navLinks.map((link) => (
+                            <Button key={link.name} variant="ghost" className="text-white hover:bg-white/10 gap-2 text-sm font-semibold">
+                                <HugeiconsIcon icon={link.icon} size={18} /> {link.name}
+                            </Button>
+                        ))
+                        :
+                        <div className="w-50"></div>
+                    }
                     <div className="flex items-center gap-3 ml-2">
-                        <Link href="/auth/register">
-                            <Button variant="outline" className="border-white text-white hover:bg-white/10 hover:text-white h-11 px-6 text-sm font-bold">
-                                Daftar
-                            </Button>
-                        </Link>
-                        <Link href="/auth/login">
-                            <Button className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-8 text-sm font-bold shadow-lg">
-                                Masuk
-                            </Button>
-                        </Link>
+                        {isLoading ? (
+                            <div className="w-20 h-11 bg-white/10 animate-pulse rounded-lg" />
+                        ) : isAuthenticated ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-6 text-sm font-bold shadow-lg gap-2 ring-offset-[#002558] focus-visible:ring-blue-500">
+                                        <HugeiconsIcon icon={UserIcon} size={18} />
+                                        <span>Profil</span>
+                                        <HugeiconsIcon icon={ChevronDown} size={14} className="opacity-50" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56 mt-2 rounded-xl" align="end">
+                                    <DropdownMenuLabel className="flex flex-col gap-1 p-3">
+                                        <p className="text-sm font-bold leading-none">{session?.user.name}</p>
+                                        <p className="text-xs font-medium leading-none text-muted-foreground">{session?.user.email}</p>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <Link href="/dashboard">
+                                        <DropdownMenuItem className="cursor-pointer gap-2 py-2.5">
+                                            <HugeiconsIcon icon={DashboardCircleIcon} size={18} />
+                                            <span>Dashboard</span>
+                                        </DropdownMenuItem>
+                                    </Link>
+                                    <Link href="/dashboard/profile">
+                                        <DropdownMenuItem className="cursor-pointer gap-2 py-2.5">
+                                            <HugeiconsIcon icon={UserIcon} size={18} />
+                                            <span>Profil Saya</span>
+                                        </DropdownMenuItem>
+                                    </Link>
+                                    <Link href="/settings">
+                                        <DropdownMenuItem className="cursor-pointer gap-2 py-2.5">
+                                            <HugeiconsIcon icon={Settings} size={18} />
+                                            <span>Pengaturan</span>
+                                        </DropdownMenuItem>
+                                    </Link>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        className="cursor-pointer gap-2 py-2.5 text-red-600 focus:text-red-600 focus:bg-red-50"
+                                        onClick={() => signOut()}
+                                    >
+                                        <HugeiconsIcon icon={Logout} size={18} />
+                                        <span>Keluar</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <>
+                                <Link href="/auth/register">
+                                    <Button variant="outline" className="border-white text-white hover:bg-white/10 hover:text-white h-11 px-6 text-sm font-bold">
+                                        Daftar
+                                    </Button>
+                                </Link>
+                                <Link href="/auth/login">
+                                    <Button className="bg-blue-600 hover:bg-blue-700 text-white h-11 px-8 text-sm font-bold shadow-lg">
+                                        Masuk
+                                    </Button>
+                                </Link>
+                            </>
+                        )}
                     </div>
                 </nav>
                 <div className="flex xl:hidden items-center gap-2">
@@ -90,11 +157,10 @@ const Header = () => {
                         variant="ghost"
                         size="icon"
                         className="text-white md:hidden"
-                        onClick={() => set_is_search_open(!is_search_open)}
+                        onClick={() => setIsSearchOpen(!isSearchOpen)}
                     >
-                        <HugeiconsIcon icon={is_search_open ? Close : Search} size={24} />
+                        <HugeiconsIcon icon={isSearchOpen ? Close : Search} size={24} />
                     </Button>
-
                     <Sheet>
                         <SheetTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-white">
@@ -107,30 +173,46 @@ const Header = () => {
                                     LOKET
                                 </SheetTitle>
                             </SheetHeader>
-
                             <div className="flex flex-col p-8 gap-8">
                                 <div className="flex flex-col gap-6">
-                                    {nav_links.map((link) => (
+                                    {session?.user.role === "admin" && navLinks.map((link) => (
                                         <a key={link.name} href={link.href} className="flex items-center gap-4 text-xl font-bold hover:text-blue-300">
                                             <HugeiconsIcon icon={link.icon} size={24} className="text-blue-400" />
                                             {link.name}
                                         </a>
                                     ))}
+                                    {isAuthenticated && (
+                                        <Link href="/dashboard/profile" className="flex items-center gap-4 text-xl font-bold hover:text-blue-300">
+                                            <HugeiconsIcon icon={UserIcon} size={24} className="text-blue-400" />
+                                            Profil Saya
+                                        </Link>
+                                    )}
                                 </div>
-
                                 <div className="h-px bg-white/10 w-full" />
-
                                 <div className="flex flex-col gap-4">
-                                    <Link href="/auth/login">
-                                        <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-bold">
-                                            Masuk
+                                    {isAuthenticated ? (
+                                        <Button
+                                            onClick={() => signOut()}
+                                            variant="outline"
+                                            className="w-full border-red-500 text-red-500 hover:bg-red-500 hover:text-white h-14 text-lg gap-2"
+                                        >
+                                            <HugeiconsIcon icon={Logout} size={20} />
+                                            Keluar
                                         </Button>
-                                    </Link>
-                                    <Link href="/auth/register">
-                                        <Button variant="outline" className="w-full border-white text-white h-14 text-lg">
-                                            Daftar
-                                        </Button>
-                                    </Link>
+                                    ) : (
+                                        <>
+                                            <Link href="/auth/login">
+                                                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 text-lg font-bold">
+                                                    Masuk
+                                                </Button>
+                                            </Link>
+                                            <Link href="/auth/register">
+                                                <Button variant="outline" className="w-full border-white text-white h-14 text-lg">
+                                                    Daftar
+                                                </Button>
+                                            </Link>
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </SheetContent>
@@ -139,7 +221,7 @@ const Header = () => {
             </div>
             <div className={cn(
                 "md:hidden bg-[#001b41] border-b border-white/10 px-4 transition-all duration-300 overflow-hidden",
-                is_search_open ? "h-20 py-4" : "h-0 py-0 border-none"
+                isSearchOpen ? "h-20 py-4" : "h-0 py-0 border-none"
             )}>
                 <div className="relative">
                     <Input
@@ -152,7 +234,6 @@ const Header = () => {
                     </div>
                 </div>
             </div>
-
             <div className="container mx-auto pb-5 px-4 flex gap-6 text-xs text-white/50 font-medium overflow-x-auto no-scrollbar">
                 {['#Promo_Indodana', '#LOKETPlus', '#LOKETScreen', '#LOKET_Promo', '#Loket'].map((tag) => (
                     <span key={tag} className="hover:text-white cursor-pointer transition-colors whitespace-nowrap italic">

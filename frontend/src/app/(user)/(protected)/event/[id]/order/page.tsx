@@ -25,22 +25,22 @@ const SeatSelector = dynamic(
 );
 
 export default function BookingPage() {
-    const [selected_seats, set_selected_seats] = useState<Seat[]>([]);
-    const [application_fee, set_application_fee] = useState(0);
+    const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
+    const [applicationFee, setApplicationFee] = useState(0);
 
     const toggle_seat = (seat: Seat) => {
-        if (selected_seats.find(s => s.id === seat.id)) {
-            set_selected_seats(selected_seats.filter(s => s.id !== seat.id));
-            set_application_fee((prev) => prev - 0.1 * seat.price);
+        if (selectedSeats.find(s => s.id === seat.id)) {
+            setSelectedSeats(selectedSeats.filter(s => s.id !== seat.id));
+            setApplicationFee((prev) => prev - 0.1 * seat.price);
         } else {
-            set_selected_seats([...selected_seats, seat]);
-            set_application_fee((prev) => prev + 0.1 * seat.price);
+            setSelectedSeats([...selectedSeats, seat]);
+            setApplicationFee((prev) => prev + 0.1 * seat.price);
         }
     };
 
     const total_price = useMemo(() => {
-        return selected_seats.reduce((acc, curr) => acc + curr.price, 0)
-    }, [selected_seats]);
+        return selectedSeats.reduce((acc, curr) => acc + curr.price, 0)
+    }, [selectedSeats]);
 
     return (
         <div className="min-h-screen bg-[#f8f9fa] pb-20">
@@ -50,15 +50,15 @@ export default function BookingPage() {
                         <section>
                             <h2 className="text-2xl font-black text-[#002558] mb-6 tracking-tight">Pilih kursi</h2>
                             <SeatSelector
-                                selected_seat_ids={selected_seats.map(s => s.id)}
+                                selected_seat_ids={selectedSeats.map(s => s.id)}
                                 on_seat_click={toggle_seat}
                             />
                         </section>
 
-                        {selected_seats.length > 0 && (
+                        {selectedSeats.length > 0 && (
                             <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <h2 className="text-2xl font-black text-[#002558] tracking-tight">Informasi Peserta</h2>
-                                {selected_seats.map((seat, index) => (
+                                {selectedSeats.map((seat, index) => (
                                     <div key={seat.id} className="bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
                                         <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
                                             <div className="flex items-center gap-3">
@@ -109,10 +109,10 @@ export default function BookingPage() {
                             <h3 className="text-xl font-black italic uppercase tracking-tighter border-b border-white/10 pb-4">Ringkasan pesanan</h3>
 
                             <div className="space-y-4 max-h-75 overflow-y-auto no-scrollbar">
-                                {selected_seats.length === 0 ? (
+                                {selectedSeats.length === 0 ? (
                                     <p className="text-blue-200 text-sm italic opacity-60">Belum ada kursi yang dipilih.</p>
                                 ) : (
-                                    selected_seats.map(seat => (
+                                    selectedSeats.map(seat => (
                                         <div key={seat.id} className="flex justify-between items-center text-sm group animate-in fade-in">
                                             <div className="flex items-center gap-2">
                                                 <HugeiconsIcon icon={Ticket} size={16} className="text-blue-400" />
@@ -132,18 +132,18 @@ export default function BookingPage() {
                                     </div>
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="font-bold text-blue-300 tracking-widest">Biaya aplikasi</span>
-                                        <span className="text-2xl font-black text-white">Rp {application_fee.toLocaleString()}</span>
+                                        <span className="text-2xl font-black text-white">Rp {applicationFee.toLocaleString()}</span>
                                     </div>
                                     <hr className=' border-white/10 my-5' />
                                     <div className="flex items-center justify-between gap-2">
                                         <span className="font-bold text-blue-300 tracking-widest">Total Order</span>
-                                        <span className="text-2xl font-black text-white">Rp {(total_price + application_fee).toLocaleString()}</span>
+                                        <span className="text-2xl font-black text-white">Rp {(total_price + applicationFee).toLocaleString()}</span>
                                     </div>
                                 </div>
                             </div>
 
                             <Button
-                                disabled={selected_seats.length === 0}
+                                disabled={selectedSeats.length === 0}
                                 className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-lg shadow-lg active:scale-95 transition-all"
                             >
                                 Bayar Sekarang
