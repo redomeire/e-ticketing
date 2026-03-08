@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils/cn"
 import { Button } from "@/components/ui/button"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowLeft01Icon, ArrowRight01Icon, MoreHorizontalCircle01Icon } from "@hugeicons/core-free-icons"
+import Link from "next/link"
 
 function Pagination({ className, ...props }: React.ComponentProps<"nav">) {
   return (
@@ -52,10 +53,11 @@ function PaginationLink({
       size={size}
       className={cn(className)}
     >
-      <a
+      <Link
         aria-current={isActive ? "page" : undefined}
         data-slot="pagination-link"
         data-active={isActive}
+        href={props.href || "#"}
         {...props}
       />
     </Button>

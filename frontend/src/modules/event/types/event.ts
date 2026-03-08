@@ -1,0 +1,44 @@
+interface IEvent {
+    id: number;
+    name: string;
+    slug: string;
+    description?: string;
+    terms_and_conditions?: string;
+    cover_image_url?: string;
+    start_time: string;
+    end_time: string;
+    location: string;
+    max_row_index: number;
+    max_column_index: number;
+    is_active: boolean;
+}
+
+interface IEventTicketCategory {
+    id: number;
+    event_id: number;
+    name: string;
+    base_price: number;
+    quota: number;
+}
+
+interface IEventSeat {
+    id: number;
+    ticket_category_id: number;
+    seat_number: string;
+    row_index: number;
+    column_index: number;
+    is_available: boolean;
+    locked_until: string | null;
+}
+
+interface IEventCategory {
+    id: number;
+    name: string;
+}
+
+export type {
+    IEvent,
+    IEventTicketCategory,
+    IEventSeat,
+    IEventCategory
+};

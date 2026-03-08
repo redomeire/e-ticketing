@@ -3,10 +3,9 @@ import {
     Pagination,
     PaginationContent,
     PaginationItem,
-    PaginationPrevious,
     PaginationLink,
-    PaginationEllipsis,
-    PaginationNext
+    PaginationNext,
+    PaginationPrevious
 } from "@/components/ui/pagination";
 import {
     Select,
@@ -17,48 +16,37 @@ import {
     SelectValue
 } from "@/components/ui/select";
 import EventCard from "@/modules/event/components/card/EventCard";
+import { useGetEvents } from "@/modules/event/hooks/useEventRepository";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-const event_list = [
-    {
-        id: 1,
-        title: "TEDxBandung 2026: Ideas Worth Spreading",
-        date: "25 Apr 2026, 19:00",
-        location: "ICE BSD Hall 10, Tangerang",
-        price: "Rp 150.000",
-        organizer: "TEDxBandung",
-        image_url: "https://images.unsplash.com/photo-1772090049995-6116febe0d60?q=80&w=735&auto=format&fit=crop"
-    },
-    {
-        id: 2,
-        title: "Java Jazz Festival 2026 - Special Show",
-        date: "02 Mei 2026, 15:00",
-        location: "JIExpo Kemayoran, Jakarta",
-        price: "Rp 750.000",
-        organizer: "Java Festival Prod.",
-        image_url: "https://images.unsplash.com/flagged/photo-1569231290377-072234d3ee57?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    },
-    {
-        id: 3,
-        title: "Happy Music: NFT & Royalty Workshop",
-        date: "10 Jun 2026, 10:00",
-        location: "Gedung Filateli, Jakarta",
-        price: "Rp 50.000",
-        organizer: "Happy Music Project",
-        image_url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=800&auto=format&fit=crop"
-    },
-    {
-        id: 4,
-        title: "Brawijaya IT Conference: Future of AI",
-        date: "15 Jul 2026, 08:00",
-        location: "Universitas Brawijaya, Malang",
-        price: "Gratis",
-        organizer: "FILKOM UB",
-        image_url: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=800&auto=format&fit=crop"
+function PageContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const searchQuery = searchParams.get("search") || "";
+    const pageQuery = searchParams.get("page") || "1";
+    const limitQuery = searchParams.get("limit") || "10";
+
+    const { data: events, isPending } = useGetEvents({
+        options: {
+            params: {
+                page: parseInt(pageQuery, 10),
+                limit: parseInt(limitQuery, 10),
+                search: searchQuery
+            }
+        }
+    }, {
+        retry: false,
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: false,
+        staleTime: 5 * 60 * 1000,
+    });
+    const setParams = (param: Record<string, string | number>) => {
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.set(Object.keys(param)[0], Object.values(param)[0].toString());
+        router.push(`?${newParams.toString()}`);
     }
-];
-
-export default function Page() {
     return (
         <div className="min-h-screen bg-[#f8f9fa]">
             <div className="container mx-auto px-4 py-12">
@@ -72,7 +60,9 @@ export default function Page() {
                         </p>
                     </div>
                     <div>
-                        <Select>
+                        <Select onValueChange={(val) => {
+                            setParams({ limit: val });
+                        }}>
                             <SelectTrigger className="w-45 border-blue-600 ring-blue-600">
                                 <SelectValue placeholder="Items per page" />
                             </SelectTrigger>
@@ -87,44 +77,76 @@ export default function Page() {
                     </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {event_list.map((event) => (
-                        <Link href={`/event/${event.id}`} key={event.id} className="block">
-                            <EventCard
-                                title={event.title}
-                                date={event.date}
-                                location={event.location}
-                                price={event.price}
-                                organizer={event.organizer}
-                                image_url={event.image_url}
-                            />
-                        </Link>
-                    ))}
+                    {
+                        isPending && !events ? (
+                            <p className="text-center text-gray-500 col-span-full">
+                                Memuat event...
+                            </p>
+                        ) : events?.data.data && events?.data.data.length > 0 ?
+                            events?.data.data.map((event) => (
+                                <Link key={event.id} href={`/event/${event.slug}`}>
+                                    <EventCard
+                                        event={event}
+                                        ticketCategories={event.ticket_categories}
+                                    />
+                                </Link>
+                            )) : (
+                                <p className="text-center text-gray-500 col-span-full">
+                                    Tidak ada event yang tersedia.
+                                </p>
+                            )}
                 </div>
                 <Pagination className="mt-10">
                     <PaginationContent>
-                        <PaginationItem>
-                            <PaginationPrevious href="#" />
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#" isActive className="bg-blue-600 text-white hover:bg-blue-400">1</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#">
-                                2
-                            </PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#">3</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationEllipsis />
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationNext href="#" />
-                        </PaginationItem>
+                        {
+                            events?.data.links &&
+                            events?.data.links.length > 0 &&
+                            events?.data.links.map((link, index) => {
+                                if (link.label.includes("Previous")) {
+                                    return (
+                                        <PaginationPrevious key={index} href="#" className="cursor-not-allowed opacity-50">
+                                            Previous
+                                        </PaginationPrevious>
+                                    )
+                                }
+                                else if (link.label.includes("Next")) {
+                                    return (
+                                        <PaginationNext key={index} href="#" className="cursor-not-allowed opacity-50">
+                                            Next
+                                        </PaginationNext>
+                                    )
+                                }
+                                return (
+                                    <PaginationItem key={index}>
+                                        <PaginationLink
+                                            href={`?${new URLSearchParams({
+                                                ...Object.fromEntries(searchParams.entries()),
+                                                page: link.page ? link.page.toString() : pageQuery
+                                            }).toString()}`}
+                                            isActive={link.active}
+                                            className={link.active ? "bg-blue-600 text-white hover:bg-blue-400" : ""}
+                                        >
+                                            {link.label}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                )
+                            })
+                        }
                     </PaginationContent>
                 </Pagination>
             </div>
         </div>
     );
+}
+
+export default function Page() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <p className="text-gray-500">Memuat halaman...</p>
+            </div>
+        }>
+            <PageContent />
+        </Suspense>
+    )
 }

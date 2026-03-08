@@ -17,25 +17,41 @@ class EventController extends Controller
     public function all(Request $request)
     {
         try {
-            // get is_active from query parameters
-            $is_active = $request->query('is_active');
-            // is_active is optional, if not provided, return all events
-            $events = null;
-            if ($is_active) {
-                $events = Event::where('is_active', true)->get();
-            } else {
-                $events = Event::all();
+            $validator = Validator::make($request->query(), [
+                'limit' => 'sometimes|integer|min:1',
+                'page' => 'sometimes|integer|min:1',
+                'search' => 'nullable|string|max:255',
+            ]);
+            if ($validator->fails()) {
+                return $this->sendError('Validation Error', $validator->errors(), 422);
             }
+            $validated = $validator->validated();
+            $events = null;
+            $limit = $validated['limit'] ?? 10;
+            $page = $validated['page'] ?? 1;
+            $search = $validated['search'];
+
+            $query = Event::with(['ticketCategories:id,event_id,name,base_price,quota'])
+                ->select('id', 'name', 'start_time', 'end_time', 'location', 'slug');
+            if ($search) {
+                $query->where('name', 'ILIKE', "%$search%");
+            }
+            $events = $query->paginate($limit, ['*'], 'page', $page);
             return $this->sendResponse($events, 'Events retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Error retrieving events', ['error' => $e->getMessage()], 500);
         }
     }
-    public function show($id)
+    public function show($slug)
     {
         try {
             // select event with categories and seats
-            $event = Event::with('categories:id,event_id,name,base_price')->select(['id', 'name', 'description', 'is_active'])->find($id);
+            $event = Event::with([
+                'ticketCategories:id,event_id,name,base_price,quota',
+                'categories:id,name',
+            ])->select('id', 'name', 'description', 'is_active', 'start_time', 'end_time', 'location', 'slug')
+                ->where('slug', $slug)
+                ->first();
             if (!$event) {
                 return $this->sendError('Event not found', [], 404);
             }

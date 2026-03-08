@@ -14,6 +14,49 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
 
+/**
+ * {
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Resident Evil 9 Playgame",
+    "description": "Bersiaplah untuk petualangan terbesar tahun ini! One Piece Fan Fest 2026 hadir membawa atmosfer Grand Line langsung ke hadapan Anda. Nikmati berbagai galeri seni eksklusif, talkshow bersama komunitas, hingga kompetisi cosplay dengan hadiah jutaan rupiah.",
+    "is_active": false,
+    "start_time": "2026-05-15 09:00:00",
+    "end_time": "2026-05-15 17:00:00",
+    "location": "ICE BSD Hall 10, Tangerang",
+    "slug": "resident-evil-9-playgame-g3f2u",
+    "ticket_categories": [
+      {
+        "id": 1,
+        "event_id": 1,
+        "name": "REGULAR",
+        "base_price": 50000,
+        "quota": 40
+      },
+      {
+        "id": 2,
+        "event_id": 1,
+        "name": "VIP",
+        "base_price": 75000,
+        "quota": 20
+      }
+    ],
+    "categories": [
+      {
+        "id": 1,
+        "name": "Anime"
+      },
+      {
+        "id": 2,
+        "name": "Hiburan"
+      }
+    ]
+  },
+  "message": "Event retrieved successfully"
+}
+ */
+
 const event_data = {
     title: "The Grand Line Trials: One Piece Fan Fest 2026",
     date: "Sabtu, 25 April 2026",

@@ -12,6 +12,10 @@ class EventCategory extends Model
     protected $fillable = [
         'name',
     ];
+    protected $hidden = [
+        'pivot',
+        'deleted_at'
+    ];
     public function events()
     {
         return $this->belongsToMany(Event::class, 'category_events');

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { useSession, signOut } from "next-auth/react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -35,6 +35,7 @@ import {
 import { cn } from "@/lib/utils/cn";
 import Link from 'next/link';
 import { useLogout } from '@/modules/auth/hooks/useAuthRepository';
+import { useRouter } from 'next/navigation';
 
 const Header = () => {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -42,6 +43,7 @@ const Header = () => {
     const isLoading = status === "loading";
     const isAuthenticated = status === "authenticated";
     const { mutateAsync: logout } = useLogout({});
+    const router = useRouter();
 
     const navLinks = [
         { name: 'Buat Event', icon: Calendar, href: '#' },
@@ -51,6 +53,16 @@ const Header = () => {
     const handleLogout = async () => {
         await logout();
         signOut();
+    }
+
+    const onSearch = (e: FormEvent) => {
+        e.preventDefault();
+        const formData = new FormData(e.target as HTMLFormElement);
+        const value = formData.get("search")?.toString() || "";
+
+        const searchParams = new URLSearchParams(window.location.search);
+        searchParams.set("search", value);
+        router.push(`/?${searchParams.toString()}`);
     }
 
     return (
@@ -75,7 +87,7 @@ const Header = () => {
                         12 Tahun
                     </span>
                 </Link>
-                <div className="relative flex-1 max-w-2xl group hidden md:flex">
+                <form onSubmit={onSearch} className="relative flex-1 max-w-2xl group hidden md:flex">
                     <Input
                         name="search"
                         placeholder="Cari event seru di sini"
@@ -87,7 +99,7 @@ const Header = () => {
                     >
                         <HugeiconsIcon icon={Search} size={20} />
                     </Button>
-                </div>
+                </form>
                 <nav className="hidden xl:flex items-center gap-4">
                     {session?.user.role === "admin" ?
                         navLinks.map((link) => (
