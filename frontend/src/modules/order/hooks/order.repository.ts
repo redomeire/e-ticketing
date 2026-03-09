@@ -1,5 +1,6 @@
 import api from "@/config/api";
-import { IHttpRequest, IHttpResponse } from "@/config/http";
+import { IHttpRequest, IHttpResponse, IPaginatedData } from "@/config/http";
+import { IOrderHistory } from "../types/order";
 
 interface ICheckoutRequest {
     attendees: {
@@ -27,8 +28,19 @@ const checkout = async (
     return response.data;
 }
 
+const getOrderHistory = async (
+    params: IHttpRequest<{}>
+): Promise<IHttpResponse<IPaginatedData<IOrderHistory>>> => {
+    const response = await api.get(
+        `/event/orders`,
+        params.options
+    );
+    return response.data;
+}
+
 const orderRepository = {
-    checkout
+    checkout,
+    getOrderHistory
 }
 
 export type {

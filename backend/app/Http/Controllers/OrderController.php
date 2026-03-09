@@ -22,6 +22,7 @@ class OrderController extends Controller
     {
         try {
             $user = auth()->user();
+            $page = $request->query('page', 1);
             $orders = DB::table('orders')
                 ->join('order_items', 'orders.id', '=', 'order_items.order_id')
                 ->join('event_seats', 'order_items.seat_id', '=', 'event_seats.id')
@@ -48,7 +49,7 @@ class OrderController extends Controller
                     'orders.created_at',
                 )
                 ->orderBy('orders.created_at', 'desc')
-                ->get();
+                ->paginate(10, ['*'], 'page', $page);
 
             return $this->sendResponse($orders, 'Orders retrieved successfully');
         } catch (\Exception $e) {
