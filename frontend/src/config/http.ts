@@ -6,7 +6,7 @@ interface IHttpRequest<T> {
 }
 
 interface IHttpResponse<T> {
-    status: boolean;
+    success: boolean;
     message: string;
     data: T;
 }

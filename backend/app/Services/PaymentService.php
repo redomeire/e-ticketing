@@ -38,8 +38,8 @@ class PaymentService
                 'items' => $items,
                 'currency' => 'IDR',
                 'invoice_duration' => 5 * 60,
-                'success_redirect_url' => '' . config('app.additional_config_files.frontend_url') . '/payment/checkout/success',
-                'failure_redirect_url' => '' . config('app.additional_config_files.frontend_url') . '/payment/checkout/failure?orderId=' . $order->id,
+                'success_redirect_url' => '' . config('app.additional_config_files.frontend_url') . '/payment/success',
+                'failure_redirect_url' => '' . config('app.additional_config_files.frontend_url') . '/payment/error?orderId=' . $order->id,
             ];
             $invoice_request = new CreateInvoiceRequest($params);
             $invoice_payload = $this->invoiceApi->createInvoice($invoice_request);

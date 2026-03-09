@@ -19,7 +19,7 @@ class OrderObserver
         if (!empty($attendees)) {
             $first_seat_id = $attendees[0]['seat_id'];
 
-            $seat = EventSeat::with('category.event')->find($first_seat_id);
+            $seat = EventSeat::with('ticketCategory.event')->find($first_seat_id);
 
             if ($seat && $seat->ticketCategory && $seat->ticketCategory->event) {
                 $event = $seat->ticketCategory->event;

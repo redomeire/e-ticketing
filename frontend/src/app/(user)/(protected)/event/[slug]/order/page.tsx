@@ -20,6 +20,7 @@ import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import FormProviderWrapper from '@/components/provider/FormProviderWrapper';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCheckout } from '@/modules/order/repositories/useOrderRepository';
 
 // prevent hydration mismatch
 const SeatSelector = dynamic(
@@ -34,6 +35,8 @@ export default function BookingPage() {
     const [selectedSeats, setSelectedSeats] = useState<IGetEventSeatsResponse[]>([]);
     const [applicationFee, setApplicationFee] = useState(0);
     const params = useParams();
+
+    const { mutateAsync } = useCheckout();
 
     const form = useForm<BookingFormData>({
         resolver: zodResolver(bookingSchema),
@@ -73,8 +76,18 @@ export default function BookingPage() {
         );
     }, [selectedSeats]);
 
-    const onSubmit = (data: BookingFormData) => {
-        console.log(data);
+    const onSubmit = async (data: BookingFormData) => {
+        const convertedData = {
+            attendees: data.attendees.map((attendee) => ({
+                ...attendee,
+                is_male: attendee.isMale === "laki-laki",
+                seat_id: attendee.seatId
+            }))
+        }
+        const res = await mutateAsync(convertedData);
+        if (res.success) {
+            window.location.assign(res.data.invoice_url);
+        }
     }
 
     return (
@@ -221,7 +234,6 @@ export default function BookingPage() {
                             </Button>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
