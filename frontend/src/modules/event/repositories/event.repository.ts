@@ -26,7 +26,7 @@ interface IGetEventDetailRequest {
 }
 
 type IGetEventDetailResponse = IEvent & {
-    ticket_categories: IEventTicketCategory[];
+    ticket_categories: (IEventTicketCategory & { available_tickets_count: number })[];
     categories: IEventCategory[];
 }
 

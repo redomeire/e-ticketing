@@ -7,6 +7,7 @@ import {
 } from '@hugeicons/core-free-icons';
 import { IEvent, IEventTicketCategory } from '../../types/event';
 import { formatCurrency } from '@/lib/utils/formatCurrency';
+import { formatDate } from '@/lib/utils/formatDate';
 
 interface EventCardProps {
     event: Omit<IEvent, 'max_row_index' | 'max_column_index'>
@@ -39,7 +40,7 @@ export default function EventCard({ event, ticketCategories }: EventCardProps) {
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
                         <HugeiconsIcon icon={Calendar} size={16} className="text-blue-500" />
-                        <span>{event.start_time}</span>
+                        <span>{formatDate(event.start_time)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-gray-500 font-medium">
                         <HugeiconsIcon icon={Location} size={16} className="text-blue-500" />

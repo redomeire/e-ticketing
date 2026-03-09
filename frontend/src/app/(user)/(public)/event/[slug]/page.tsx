@@ -127,6 +127,24 @@ export default async function Page({ params }: Props) {
                                 <div className="p-8 border-2 border-dashed border-gray-200 rounded-2xl text-center">
                                     <HugeiconsIcon icon={Ticket} size={48} className="mx-auto text-gray-300 mb-4" />
                                     <p className="text-gray-500 font-medium">Pilih kategori tiket di kolom sebelah kanan atau scroll ke bawah pada mobile.</p>
+                                    {event.ticket_categories.length > 0 && (
+                                        <div className="mt-6 space-y-4">
+                                            {event.ticket_categories.map((category) => (
+                                                <div key={category.id} className="flex items-center justify-between border border-gray-100 rounded-lg p-4">
+                                                    <div>
+                                                        <h4 className="text-lg font-bold text-gray-900">{category.name}</h4>
+                                                        {/* {JSON.stringify(category)} */}
+                                                    </div>
+                                                    <div className="text-lg font-bold text-blue-600">
+                                                        {formatCurrency(category.base_price)}
+                                                    </div>
+                                                    <div className="text-sm text-gray-400">
+                                                        Sisa {category.available_tickets_count}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </TabsContent>
                             <TabsContent value="s&k" className="py-8">

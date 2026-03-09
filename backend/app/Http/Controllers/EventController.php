@@ -32,7 +32,7 @@ class EventController extends Controller
             $search = $validated['search'];
 
             $query = Event::with(['ticketCategories:id,event_id,name,base_price,quota'])
-                ->select('id', 'name', 'start_time', 'end_time', 'location', 'slug');
+                ->select('id', 'name', 'start_time', 'end_time', 'location', 'slug', 'is_active');
             if ($search) {
                 $query->where('name', 'ILIKE', "%$search%");
             }
@@ -47,9 +47,24 @@ class EventController extends Controller
         try {
             // select event with categories and seats
             $event = Event::with([
-                'ticketCategories:id,event_id,name,base_price,quota',
+                // Ambil data seats hanya yang diperlukan untuk UI Denah
+                'ticketCategories.seats:id,ticket_category_id,is_available,locked_until,seat_number',
                 'categories:id,name',
-            ])->select('id', 'name', 'description', 'is_active', 'start_time', 'end_time', 'location', 'slug')
+            ])
+                ->with([
+                    'ticketCategories' => function ($query) {
+                        $query->withCount([
+                            'seats as available_tickets_count' => function ($q) {
+                                $q->where('is_available', true)
+                                    ->where(function ($lockQuery) {
+                                        $lockQuery->whereNull('locked_until')
+                                            ->orWhere('locked_until', '<', now());
+                                    });
+                            }
+                        ]);
+                    }
+                ])
+                ->select('id', 'name', 'description', 'is_active', 'start_time', 'end_time', 'location', 'slug')
                 ->where('slug', $slug)
                 ->first();
             if (!$event) {
