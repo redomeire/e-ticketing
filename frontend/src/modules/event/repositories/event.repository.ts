@@ -39,11 +39,11 @@ const getEventDetail = async (
     return response.data;
 }
 
-const authRepository = {
+const eventRepository = {
     getEvents,
     getEventDetail
 }
 
 export type { IGetEventsResponse, IGetEventDetailResponse, IGetEventDetailRequest };
 
-export default authRepository;
+export default eventRepository;

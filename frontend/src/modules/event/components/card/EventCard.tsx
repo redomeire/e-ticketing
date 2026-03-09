@@ -6,6 +6,7 @@ import {
     Ticket
 } from '@hugeicons/core-free-icons';
 import { IEvent, IEventTicketCategory } from '../../types/event';
+import { formatCurrency } from '@/lib/utils/formatCurrency';
 
 interface EventCardProps {
     event: Omit<IEvent, 'max_row_index' | 'max_column_index'>
@@ -49,7 +50,7 @@ export default function EventCard({ event, ticketCategories }: EventCardProps) {
                 <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
                     <div className="flex flex-col">
                         <span className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Mulai dari</span>
-                        <span className="text-lg font-black text-blue-600">{lowestPrice}</span>
+                        <span className="text-lg font-black text-blue-600">{formatCurrency(lowestPrice)}</span>
                     </div>
                     <div className="bg-blue-50 p-2 rounded-full group-hover:bg-blue-600 transition-colors">
                         <HugeiconsIcon icon={Ticket} size={20} className="text-blue-600 group-hover:text-white" />

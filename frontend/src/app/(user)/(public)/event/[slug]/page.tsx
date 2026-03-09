@@ -13,75 +13,55 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import Link from "next/link";
-
-/**
- * {
-  "success": true,
-  "data": {
-    "id": 1,
-    "name": "Resident Evil 9 Playgame",
-    "description": "Bersiaplah untuk petualangan terbesar tahun ini! One Piece Fan Fest 2026 hadir membawa atmosfer Grand Line langsung ke hadapan Anda. Nikmati berbagai galeri seni eksklusif, talkshow bersama komunitas, hingga kompetisi cosplay dengan hadiah jutaan rupiah.",
-    "is_active": false,
-    "start_time": "2026-05-15 09:00:00",
-    "end_time": "2026-05-15 17:00:00",
-    "location": "ICE BSD Hall 10, Tangerang",
-    "slug": "resident-evil-9-playgame-g3f2u",
-    "ticket_categories": [
-      {
-        "id": 1,
-        "event_id": 1,
-        "name": "REGULAR",
-        "base_price": 50000,
-        "quota": 40
-      },
-      {
-        "id": 2,
-        "event_id": 1,
-        "name": "VIP",
-        "base_price": 75000,
-        "quota": 20
-      }
-    ],
-    "categories": [
-      {
-        "id": 1,
-        "name": "Anime"
-      },
-      {
-        "id": 2,
-        "name": "Hiburan"
-      }
-    ]
-  },
-  "message": "Event retrieved successfully"
-}
- */
+import eventRepository from "@/modules/event/repositories/event.repository";
+import { formatCurrency } from "@/lib/utils/formatCurrency";
+import { formatDate } from "@/lib/utils/formatDate";
 
 const event_data = {
-    title: "The Grand Line Trials: One Piece Fan Fest 2026",
-    date: "Sabtu, 25 April 2026",
-    time: "10:00 - 22:00 WIB",
-    location: "ICE BSD Hall 10, Tangerang",
-    price: "Rp 150.000",
     image_url: "https://images.unsplash.com/photo-1772090049995-6116febe0d60?q=80&w=735&auto=format&fit=crop",
-    categories: ["Anime & Cosplay", "Media & Hiburan", "Media & Konten Digital"]
 };
 
-export default function Page() {
+async function getEvent(slug: string) {
+    const res = await eventRepository.getEventDetail({
+        payload: {
+            slug
+        }
+    });
+
+    return res.data;
+}
+
+interface Props {
+    params: Promise<{ slug: string }>
+}
+
+export default async function Page({ params }: Props) {
+    const { slug } = await params;
+    if (!slug) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <p className="text-gray-500 text-lg">Event tidak ditemukan</p>
+            </div>
+        );
+    }
+    const event = await getEvent(slug);
+    const priceStartFrom = event.ticket_categories.reduce((minPrice, category) => {
+        return category.base_price < minPrice ? category.base_price : minPrice;
+    }, Infinity);
     return (
         <div className=" bg-black/80">
             <section className="relative w-full md:h-75">
                 <div
                     className="absolute inset-0 bg-cover bg-center blur-xl opacity-60"
-                    style={{ backgroundImage: `url(${event_data.image_url})` }}
+                    style={{ backgroundImage: `url(${event.cover_image_url ?? event_data.image_url})` }}
                 />
 
                 <div className="container mx-auto px-0 h-full flex flex-col md:flex-row items-center gap-8 relative z-10">
                     <div className="absolute bottom-0 right-0 w-50 md:w-120 h-2/3 rounded-t-2xl overflow-hidden mt-8 md:mt-0 order-2 md:block hidden">
                         <div className="">
                             <Image
-                                src={event_data.image_url}
-                                alt={event_data.title}
+                                src={event.cover_image_url ?? event_data.image_url}
+                                alt={event.name}
                                 fill
                                 className="object-cover"
                             />
@@ -89,8 +69,8 @@ export default function Page() {
                     </div>
                     <div className="w-1/2 h-50 rounded-t-2xl overflow-hidden mt-8 md:mt-0 order-1 md:hidden block">
                         <Image
-                            src={event_data.image_url}
-                            alt={event_data.title}
+                            src={event.cover_image_url ?? event_data.image_url}
+                            alt={event.name}
                             width={200}
                             height={500}
                             className="object-cover"
@@ -98,21 +78,21 @@ export default function Page() {
                     </div>
                     <div className="flex-1 text-center md:text-left md:p-0 p-5 pb-4 md:order-1 order-2">
                         <h1 className="text-2xl md:text-3xl font-bold text-white mb-4 drop-shadow-sm">
-                            {event_data.title}
+                            {event.name}
                         </h1>
                         <div className="flex flex-col md:items-start items-center justify-center md:justify-start gap-4 md:gap-4">
                             <div className="flex items-center gap-2 text-white font-semibold">
                                 <HugeiconsIcon icon={Calendar} size={20} className="text-white" />
-                                <span className="md:text-lg text-md">{event_data.date}</span>
+                                <span className="md:text-lg text-md">{formatDate(event.start_time)}</span>
                             </div>
                             <div className="flex items-center gap-2 text-white font-semibold">
                                 <HugeiconsIcon icon={Location} size={20} className="text-white" />
-                                <span className="md:text-lg text-md">{event_data.location}</span>
+                                <span className="md:text-lg text-md">{event.location}</span>
                             </div>
                             <div className="flex items-center md:gap-2 gap-1 text-white font-semibold">
                                 <HugeiconsIcon icon={DashboardBrowsingIcon} size={20} className="text-white" />
                                 <span className="md:text-lg text-md md:line-clamp-none line-clamp-1">
-                                    {event_data.categories.join(" • ")}
+                                    {event.categories.map((category) => category.name).join(" • ")}
                                 </span>
                             </div>
                         </div>
@@ -139,18 +119,8 @@ export default function Page() {
                             <TabsContent value="deskripsi" className="py-8 prose prose-blue max-w-none">
                                 <h3 className="text-xl font-bold text-[#002558] mb-4">Tentang Event</h3>
                                 <p className="text-gray-600 leading-relaxed text-lg">
-                                    Bersiaplah untuk petualangan terbesar tahun ini! One Piece Fan Fest 2026 hadir membawa atmosfer Grand Line langsung ke hadapan Anda. Nikmati berbagai galeri seni eksklusif, talkshow bersama komunitas, hingga kompetisi cosplay dengan hadiah jutaan rupiah.
+                                    {event.description}
                                 </p>
-                                <ul className="mt-6 space-y-3">
-                                    <li className="flex items-center gap-2 text-gray-600">
-                                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
-                                        Eksklusif merchandise untuk 100 pendaftar pertama.
-                                    </li>
-                                    <li className="flex items-center gap-2 text-gray-600">
-                                        <div className="w-1.5 h-1.5 bg-blue-600 rounded-full" />
-                                        Akses penuh ke semua area pameran.
-                                    </li>
-                                </ul>
                             </TabsContent>
 
                             <TabsContent value="tiket" className="py-8">
@@ -161,14 +131,9 @@ export default function Page() {
                             </TabsContent>
                             <TabsContent value="s&k" className="py-8">
                                 <h3 className="text-xl font-bold text-[#002558] mb-4">Syarat & Ketentuan</h3>
-                                <ol className="space-y-3 list-decimal">
-                                    <li className="text-base gap-2 text-gray-600">
-                                        Setiap pengunjung hanya dapat melakukan reservasi untuk 1 tiket dan 1 sesi selama event ini berlangsung. Pengunjung diwajibkan untuk membawa kartu identitas yang berlaku (Kartu Pelajar/KTP/Paspor/SIM, dll) saat melakukan registrasi ulang.
-                                    </li>
-                                    <li className="text-base gap-2 text-gray-600">
-                                        2. Registrasi tidak dapat diwakilkan oleh orang lain. Tiket tidak dapat dipindahtangankan ke orang lain selain dari yang sudah terdaftar di sistem Loket.com.
-                                    </li>
-                                </ol>
+                                <p className="text-gray-600 leading-relaxed text-lg">
+                                    {event.terms_and_conditions}
+                                </p>
                             </TabsContent>
                         </Tabs>
                     </div>
@@ -177,26 +142,26 @@ export default function Page() {
                         <div className="sticky top-28 bg-white rounded-2xl shadow-xl border border-gray-100 p-6 space-y-6">
                             <div className="flex flex-col justify-between">
                                 <p className="text-sm text-gray-400 font-medium">Harga Mulai dari</p>
-                                <p className="text-2xl font-black text-blue-600">{event_data.price}</p>
+                                <p className="text-2xl font-black text-blue-600">{formatCurrency(priceStartFrom)}</p>
                             </div>
                             <div className="space-y-1">
                                 <div className="flex-1 text-center md:text-left pb-4 order-1">
                                     <h1 className="my-5 text-2xl font-bold mb-4 drop-shadow-sm">
-                                        {event_data.title}
+                                        {event.name}
                                     </h1>
                                     <div className="flex flex-col justify-center md:justify-start gap-4 md:gap-4">
                                         <div className="flex items-center gap-2">
                                             <HugeiconsIcon icon={Calendar} size={20} className="" />
-                                            <span className="text-lg">{event_data.date}</span>
+                                            <span className="text-lg">{formatDate(event.start_time)}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <HugeiconsIcon icon={Location} size={20} className="" />
-                                            <span className="text-lg">{event_data.location}</span>
+                                            <span className="text-lg">{event.location}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <HugeiconsIcon icon={DashboardBrowsingIcon} size={20} className="" />
                                             <span className="text-lg line-clamp-1 w-5/6">
-                                                {event_data.categories.join(" • ")}
+                                                {event.categories.map((category) => category.name).join(" • ")}
                                             </span>
                                         </div>
                                     </div>
@@ -240,7 +205,7 @@ export default function Page() {
             <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 z-50 flex items-center justify-between shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
                 <div>
                     <p className="text-[10px] text-gray-400 font-bold uppercase">Harga Mulai</p>
-                    <p className="text-xl font-black text-blue-600">{event_data.price}</p>
+                    <p className="text-xl font-black text-blue-600">{formatCurrency(priceStartFrom)}</p>
                 </div>
                 <Button className="bg-blue-600 hover:bg-blue-700 px-8 h-12 font-bold">
                     Beli Tiket

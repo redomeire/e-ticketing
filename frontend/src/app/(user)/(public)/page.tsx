@@ -40,7 +40,7 @@ function PageContent() {
         retry: false,
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
-        staleTime: 5 * 60 * 1000,
+        staleTime: Infinity,
     });
     const setParams = (param: Record<string, string | number>) => {
         const newParams = new URLSearchParams(searchParams.toString());

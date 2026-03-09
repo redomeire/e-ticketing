@@ -1,10 +1,14 @@
+import { auth, signOut } from "@/modules/auth/config/auth";
 import axios from "axios";
+import { Session } from "next-auth";
 import { getSession } from "next-auth/react";
 import { toast } from "sonner";
 
+const isServer = typeof window === "undefined";
 
 const api = axios.create({
-    baseURL: "/api/v1",
+    baseURL: isServer ?
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1` : "/api/v1",
     timeout: 10000,
     headers: {
         "Accept": "application/json",
@@ -13,7 +17,14 @@ const api = axios.create({
 
 api.interceptors.request.use(
     async (config) => {
-        const session = await getSession();
+        // detect if it is client side
+        let session: Session | null = null;
+        if (isServer) {
+            session = await auth();
+            config.headers["Authorization"] = `Bearer ${session?.token}`;
+            return config;
+        }
+        session = await getSession();
         config.headers["Authorization"] = `Bearer ${session?.token}`;
         return config;
     },
@@ -23,20 +34,24 @@ api.interceptors.request.use(
 )
 
 api.interceptors.response.use(
-    (response) => {
+    async (response) => {
         if (response.status >= 200 && response.status < 300) {
             console.log(response);
-            toast.success(response.data.message ?? "success")
+            if (!isServer) {
+                toast.success(response.data.message ?? "success")
+            }
             return response;
         }
         if (response.status === 401) {
-            localStorage.removeItem("token");
+            if (isServer) {
+                await signOut();
+            }
             throw new Error("Unauthorized. Please log in again.");
         }
         return response;
     },
     (error) => {
-        if (error.response && error.response.data) {
+        if (error.response && error.response.data && !isServer) {
             toast.error(error.response.data.message ?? "An error occurred");
         }
         console.error("API Error:", error);
