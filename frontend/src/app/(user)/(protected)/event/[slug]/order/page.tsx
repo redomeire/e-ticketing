@@ -36,7 +36,7 @@ export default function BookingPage() {
     const [applicationFee, setApplicationFee] = useState(0);
     const params = useParams();
 
-    const { mutateAsync } = useCheckout();
+    const { mutateAsync, isPending } = useCheckout();
 
     const form = useForm<BookingFormData>({
         resolver: zodResolver(bookingSchema),
@@ -228,6 +228,7 @@ export default function BookingPage() {
                             <Button
                                 disabled={selectedSeats.length === 0}
                                 onClick={form.handleSubmit(onSubmit)}
+                                isLoading={isPending}
                                 className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-lg shadow-lg active:scale-95 transition-all"
                             >
                                 Bayar Sekarang

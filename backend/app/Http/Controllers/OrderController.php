@@ -36,7 +36,8 @@ class OrderController extends Controller
                 )
                 ->selectRaw('SUM(order_items.price_at_purchase) as total_amount')
                 ->selectRaw('MIN(events.name) as event_name')
-                ->selectRaw('MIN(events.date) as event_date')
+                ->selectRaw('MIN(events.start_time) as start_time')
+                ->selectRaw('MIN(events.end_time) as end_time')
                 ->selectRaw('COUNT(order_items.id) as total_tickets')
                 ->where('orders.user_id', $user->id)
                 ->groupBy(

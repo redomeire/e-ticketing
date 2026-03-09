@@ -12,8 +12,8 @@ import {
     UserIcon,
     Logout,
     ArrowDown01 as ChevronDown,
-    DashboardCircleIcon,
-    Settings02Icon as Settings
+    Settings02Icon as Settings,
+    Clock01Icon
 } from '@hugeicons/core-free-icons';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,13 +128,13 @@ const Header = () => {
                                         <p className="text-xs font-medium leading-none text-muted-foreground">{session?.user.email}</p>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    <Link href="/dashboard">
+                                    <Link href="/order/history">
                                         <DropdownMenuItem className="cursor-pointer gap-2 py-2.5">
-                                            <HugeiconsIcon icon={DashboardCircleIcon} size={18} />
-                                            <span>Dashboard</span>
+                                            <HugeiconsIcon icon={Clock01Icon} size={18} />
+                                            <span>Riwayat Pemesanan</span>
                                         </DropdownMenuItem>
                                     </Link>
-                                    <Link href="/dashboard/profile">
+                                    <Link href="/profile">
                                         <DropdownMenuItem className="cursor-pointer gap-2 py-2.5">
                                             <HugeiconsIcon icon={UserIcon} size={18} />
                                             <span>Profil Saya</span>
@@ -202,10 +202,16 @@ const Header = () => {
                                         </a>
                                     ))}
                                     {isAuthenticated && (
-                                        <Link href="/dashboard/profile" className="flex items-center gap-4 text-xl font-bold hover:text-blue-300">
-                                            <HugeiconsIcon icon={UserIcon} size={24} className="text-blue-400" />
-                                            Profil Saya
-                                        </Link>
+                                        <>
+                                            <Link href="/dashboard/profile" className="flex items-center gap-4 text-xl font-bold hover:text-blue-300">
+                                                <HugeiconsIcon icon={UserIcon} size={24} className="text-blue-400" />
+                                                Profil Saya
+                                            </Link>
+                                            <Link href="/order/history" className="flex items-center gap-4 text-xl font-bold hover:text-blue-300">
+                                                <HugeiconsIcon icon={Clock01Icon} size={24} className="text-blue-400" />
+                                                Riwayat Pemesanan
+                                            </Link>
+                                        </>
                                     )}
                                 </div>
                                 <div className="h-px bg-white/10 w-full" />

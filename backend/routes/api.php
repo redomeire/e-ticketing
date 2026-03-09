@@ -20,7 +20,6 @@ Route::prefix('v1')->group(function () {
     Route::prefix('event')->group(function () {
         Route::post('/seats/checkout/webhook', [OrderController::class, 'checkoutWebhook'])->name('event.seats.checkout.webhook');
         Route::get('/', [EventController::class, 'all'])->name('event.all');
-        Route::get('/{slug}', [EventController::class, 'show'])->name('event.show');
         Route::middleware(['auth:sanctum', 'abilities:event-view'])
             ->group(function () {
                 Route::get('/orders', [OrderController::class, 'all'])->name('event.orders');
@@ -31,14 +30,18 @@ Route::prefix('v1')->group(function () {
             });
         Route::middleware(['auth:sanctum', 'abilities:event-manage'])
             ->group(function () {
+                // Rute statis di dalam manage
+                Route::post('/seats', [EventController::class, 'storeSeats'])->name('event.seats.store');
+                Route::get('/category/{event_id}', [EventController::class, 'getCategory'])->name('event.category');
+
+                // Rute dinamis/ID
                 Route::post('/', [EventController::class, 'store'])->name('event.store');
                 Route::put('/{id}', [EventController::class, 'update'])->name('event.update');
                 Route::delete('/{id}', [EventController::class, 'destroy'])->name('event.destroy');
-                Route::get('/category/{event_id}', [EventController::class, 'getCategory'])->name('event.category');
                 Route::put('/category/{id}', [EventController::class, 'updateCategory'])->name('event.category.update');
                 Route::delete('/category/{id}', [EventController::class, 'destroyCategory'])->name('event.category.destroy');
-                Route::post('/seats', [EventController::class, 'storeSeats'])->name('event.seats.store');
                 Route::delete('/seats/{id}', [EventController::class, 'destroySeat'])->name('event.seats.destroy');
             });
+        Route::get('/{slug}', [EventController::class, 'show'])->name('event.show');
     });
 });

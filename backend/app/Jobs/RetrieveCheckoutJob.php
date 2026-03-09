@@ -84,7 +84,7 @@ class RetrieveCheckoutJob implements ShouldQueue
     }
     private function update_seats_status(int $order_id, bool $is_available, $locked_until): void
     {
-        EventSeat::whereHas('orderItems', function ($query) use ($order_id) {
+        EventSeat::whereHas('orderItem', function ($query) use ($order_id) {
             $query->where('order_id', $order_id);
         })->update([
                     'is_available' => $is_available,
