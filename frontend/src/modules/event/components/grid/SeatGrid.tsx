@@ -1,24 +1,53 @@
 "use client";
 
-import React from 'react';
 import { cn } from "@/lib/utils/cn";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ChairIcon } from '@hugeicons/core-free-icons';
-
-interface Seat {
-    id: number;
-    seat_number: string;
-    is_available: boolean;
-    price: number;
-}
+import { IGetEventSeatsResponse } from '../../repositories/event.repository';
+import { useMemo } from "react";
 
 interface SeatGridProps {
-    seats: Seat[][];
-    selected_seats: number[];
-    on_seat_click: (seat: Seat) => void;
+    seats: IGetEventSeatsResponse[];
+    selectedSeats: number[];
+    onSeatClick: (seat: IGetEventSeatsResponse) => void;
 }
 
-export default function SeatGrid({ seats, selected_seats, on_seat_click }: SeatGridProps) {
+export default function SeatGrid({ seats, selectedSeats, onSeatClick }: SeatGridProps) {
+    const generateColor = (str: string) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const h = Math.abs(hash) % 360;
+        return {
+            bg: `hsl(${h}, 70%, 95%)`,
+            text: `hsl(${h}, 70%, 30%)`,
+            border: `hsl(${h}, 70%, 85%)`,
+            selected: `hsl(${h}, 70%, 45%)`
+        };
+    };
+
+    const categoryThemes = useMemo(() => {
+        const themes: Record<string, ReturnType<typeof generateColor>> = {};
+        seats.forEach(seat => {
+            const name = seat.ticket_category.name;
+            if (!themes[name]) {
+                themes[name] = generateColor(name);
+            }
+        });
+        return themes;
+    }, [seats]);
+
+    const groupedSeats = useMemo(() => {
+        const groups: Record<string, IGetEventSeatsResponse[]> = {};
+        seats.forEach(seat => {
+            const row = seat.seat_number.match(/[A-Z]+/)?.[0] || "Unknown";
+            if (!groups[row]) groups[row] = [];
+            groups[row].push(seat);
+        });
+        return Object.values(groups);
+    }, [seats]);
+
     return (
         <div className="bg-white p-6 md:p-10 rounded-3xl border border-gray-100 shadow-sm overflow-x-auto">
             <div className="w-full h-2 bg-gray-200 rounded-full mb-16 relative">
@@ -26,31 +55,35 @@ export default function SeatGrid({ seats, selected_seats, on_seat_click }: SeatG
             </div>
 
             <div className="flex flex-col gap-4 min-w-150">
-                {seats.map((row, row_idx) => (
-                    <div key={row_idx} className="flex justify-center gap-3">
+                {groupedSeats.map((row, rowIdx) => (
+                    <div key={rowIdx} className="flex justify-center gap-3">
                         <div className="w-8 flex items-center justify-center text-xs font-bold text-gray-300">
-                            {String.fromCharCode(65 + row_idx)}
+                            {String.fromCharCode(65 + rowIdx)}
                         </div>
 
                         {row.map((seat) => {
-                            const is_selected = selected_seats.includes(seat.id);
+                            const isSelected = selectedSeats.includes(seat.id);
+                            const theme = categoryThemes[seat.ticket_category.name];
+
                             return (
                                 <button
                                     key={seat.id}
                                     disabled={!seat.is_available}
-                                    onClick={() => on_seat_click(seat)}
+                                    onClick={() => onSeatClick(seat)}
+                                    style={{
+                                        backgroundColor: isSelected ? theme.selected : (seat.is_available ? theme.bg : undefined),
+                                        color: isSelected ? 'white' : (seat.is_available ? theme.text : undefined),
+                                        borderColor: isSelected ? theme.selected : theme.border
+                                    }}
                                     className={cn(
-                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-all relative group",
-                                        seat.is_available
-                                            ? is_selected
-                                                ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
-                                                : "bg-blue-50 text-blue-600 hover:bg-blue-100"
-                                            : "bg-gray-100 text-gray-300 cursor-not-allowed"
+                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-all relative group border",
+                                        !seat.is_available && "bg-gray-100 text-gray-300 border-transparent cursor-not-allowed",
+                                        isSelected && "shadow-lg scale-105"
                                     )}
                                 >
                                     <HugeiconsIcon icon={ChairIcon} size={20} />
-                                    <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-all bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
-                                        {seat.seat_number} - Rp {seat.price.toLocaleString()}
+                                    <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-all bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-20 shadow-xl pointer-events-none">
+                                        {seat.seat_number} - {seat.ticket_category.name}
                                     </span>
                                 </button>
                             );
@@ -59,16 +92,19 @@ export default function SeatGrid({ seats, selected_seats, on_seat_click }: SeatG
                 ))}
             </div>
 
-            <div className="mt-12 flex justify-center gap-8 border-t pt-8">
-                <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-                    <div className="w-4 h-4 rounded bg-blue-50 border border-blue-100" /> Tersedia
-                </div>
-                <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-                    <div className="w-4 h-4 rounded bg-blue-600" /> Dipilih
-                </div>
+            <div className="mt-12 flex flex-wrap justify-center gap-6 border-t pt-8">
                 <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
                     <div className="w-4 h-4 rounded bg-gray-100" /> Terisi
                 </div>
+                {Object.entries(categoryThemes).map(([name, theme]) => (
+                    <div key={name} className="flex items-center gap-2 text-xs font-bold text-gray-500">
+                        <div
+                            className="w-4 h-4 rounded border"
+                            style={{ backgroundColor: theme.bg, borderColor: theme.border }}
+                        />
+                        {name}
+                    </div>
+                ))}
             </div>
         </div>
     );

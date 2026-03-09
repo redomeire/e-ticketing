@@ -1,5 +1,5 @@
 import { useQuery, UseQueryOptions } from "@tanstack/react-query"
-import eventRepository, { IGetEventDetailRequest, IGetEventsResponse } from "../repositories/event.repository";
+import eventRepository, { IGetEventDetailRequest, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
 import { IHttpRequest, IPaginatedData, IHttpResponse } from "@/config/http";
 
 export function useGetEvents(
@@ -20,6 +20,18 @@ export function useGetEventDetail(
     return useQuery({
         queryKey: ["event", req.payload],
         queryFn: () => eventRepository.getEventDetail(req),
+        ...options
+    });
+}
+
+export function useGetEventSeats(
+    req: IHttpRequest<IGetEventSeatsRequest>,
+    options?: Omit<UseQueryOptions<unknown, unknown,
+        IHttpResponse<IGetEventSeatsResponse[]>>, 'queryKey'>
+) {
+    return useQuery({
+        queryKey: ["event-seats", req.payload],
+        queryFn: () => eventRepository.getEventSeats(req),
         ...options
     });
 }

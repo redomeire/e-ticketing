@@ -3,6 +3,7 @@ import { IHttpRequest, IHttpResponse, IPaginatedData } from "@/config/http";
 import {
     IEvent,
     IEventCategory,
+    IEventSeat,
     IEventTicketCategory
 } from "../types/event";
 
@@ -39,11 +40,36 @@ const getEventDetail = async (
     return response.data;
 }
 
-const eventRepository = {
-    getEvents,
-    getEventDetail
+interface IGetEventSeatsRequest {
+    slug: string;
 }
 
-export type { IGetEventsResponse, IGetEventDetailResponse, IGetEventDetailRequest };
+type IGetEventSeatsResponse = IEventSeat & {
+    ticket_category: IEventTicketCategory;
+};
+
+const getEventSeats = async (
+    params: IHttpRequest<IGetEventSeatsRequest>
+): Promise<IHttpResponse<IGetEventSeatsResponse[]>> => {
+    const response = await api.get(
+        `/event/${params.payload?.slug}/seats`,
+        params.options
+    );
+    return response.data;
+}
+
+const eventRepository = {
+    getEvents,
+    getEventDetail,
+    getEventSeats
+}
+
+export type {
+    IGetEventsResponse,
+    IGetEventDetailResponse,
+    IGetEventDetailRequest,
+    IGetEventSeatsRequest,
+    IGetEventSeatsResponse
+};
 
 export default eventRepository;

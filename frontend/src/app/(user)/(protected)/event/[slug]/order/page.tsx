@@ -13,7 +13,13 @@ import {
     Phone,
     Ticket
 } from '@hugeicons/core-free-icons';
-import { Seat } from "@/modules/event/types/order";
+import { useParams } from 'next/navigation';
+import { IGetEventSeatsResponse } from '@/modules/event/repositories/event.repository';
+import { BookingFormData, bookingSchema } from '@/modules/event/schema/createAttendee.schema';
+import { useFieldArray, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import FormProviderWrapper from '@/components/provider/FormProviderWrapper';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // prevent hydration mismatch
 const SeatSelector = dynamic(
@@ -25,22 +31,51 @@ const SeatSelector = dynamic(
 );
 
 export default function BookingPage() {
-    const [selectedSeats, setSelectedSeats] = useState<Seat[]>([]);
+    const [selectedSeats, setSelectedSeats] = useState<IGetEventSeatsResponse[]>([]);
     const [applicationFee, setApplicationFee] = useState(0);
+    const params = useParams();
 
-    const toggle_seat = (seat: Seat) => {
+    const form = useForm<BookingFormData>({
+        resolver: zodResolver(bookingSchema),
+        defaultValues: { attendees: [] },
+        mode: "onBlur"
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "attendees"
+    });
+
+    const toggle_seat = (seat: IGetEventSeatsResponse) => {
         if (selectedSeats.find(s => s.id === seat.id)) {
             setSelectedSeats(selectedSeats.filter(s => s.id !== seat.id));
-            setApplicationFee((prev) => prev - 0.1 * seat.price);
+            setApplicationFee((prev) => prev - 0.1 * seat.ticket_category.base_price);
+            const index = fields.findIndex(f => f.seatId === seat.id);
+            if (index !== -1) {
+                remove(index);
+            }
         } else {
-            setSelectedSeats([...selectedSeats, seat]);
-            setApplicationFee((prev) => prev + 0.1 * seat.price);
+            setSelectedSeats((prev) => [...prev, seat]);
+            setApplicationFee((prev) => prev + 0.1 * seat.ticket_category.base_price);
+            append({
+                name: "",
+                email: "",
+                isMale: "laki-laki",
+                phone: "",
+                seatId: seat.id
+            })
         }
     };
 
     const total_price = useMemo(() => {
-        return selectedSeats.reduce((acc, curr) => acc + curr.price, 0)
+        return selectedSeats.reduce(
+            (acc, curr) => acc + curr.ticket_category.base_price, 0
+        );
     }, [selectedSeats]);
+
+    const onSubmit = (data: BookingFormData) => {
+        console.log(data);
+    }
 
     return (
         <div className="min-h-screen bg-[#f8f9fa] pb-20">
@@ -50,57 +85,92 @@ export default function BookingPage() {
                         <section>
                             <h2 className="text-2xl font-black text-[#002558] mb-6 tracking-tight">Pilih kursi</h2>
                             <SeatSelector
-                                selected_seat_ids={selectedSeats.map(s => s.id)}
-                                on_seat_click={toggle_seat}
+                                selectedSeatIds={selectedSeats.map(s => s.id)}
+                                onSeatClick={toggle_seat}
+                                slug={params.slug as string}
                             />
                         </section>
 
-                        {selectedSeats.length > 0 && (
-                            <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                <h2 className="text-2xl font-black text-[#002558] tracking-tight">Informasi Peserta</h2>
-                                {selectedSeats.map((seat, index) => (
-                                    <div key={seat.id} className="bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
-                                        <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                                                    {index + 1}
+                        {selectedSeats.length > 0 && fields.length > 0 && (
+                            <FormProviderWrapper form={form}>
+                                <form className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <h2 className="text-2xl font-black text-[#002558] tracking-tight">Informasi Peserta</h2>
+                                    {selectedSeats.map((seat, index) => (
+                                        <div key={seat.id} className="bg-white p-6 md:p-8 rounded-3xl border border-gray-100 shadow-sm space-y-6">
+                                            <div className="flex flex-col md:flex-row md:items-center justify-between border-b pb-4 gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                                                        {index + 1}
+                                                    </div>
+                                                    <span className="font-black text-[#002558] text-lg">Kursi {seat.seat_number}</span>
                                                 </div>
-                                                <span className="font-black text-[#002558] text-lg">Kursi {seat.seat_number}</span>
+                                                <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-xl">
+                                                    <Checkbox id={`use-my-data-${seat.id}`} />
+                                                    <Label htmlFor={`use-my-data-${seat.id}`} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest cursor-pointer">
+                                                        Gunakan Data Pribadi
+                                                    </Label>
+                                                </div>
                                             </div>
-                                            <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-xl">
-                                                <Checkbox id={`use-my-data-${seat.id}`} />
-                                                <Label htmlFor={`use-my-data-${seat.id}`} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest cursor-pointer">
-                                                    Gunakan Data Pribadi
-                                                </Label>
-                                            </div>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nama Lengkap</Label>
-                                                <div className="relative">
-                                                    <Input className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="Sesuai KTP" />
-                                                    <HugeiconsIcon icon={UserIcon} size={18} className="absolute left-3 top-3.5 text-gray-300" />
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nama Lengkap</Label>
+                                                    <div className="relative">
+                                                        <Input
+                                                            className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="Sesuai KTP"
+                                                            withValidation
+                                                            name={`attendees.${index}.name`}
+                                                        />
+                                                        <HugeiconsIcon icon={UserIcon} size={18} className="absolute left-3 top-3.5 text-gray-300" />
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</Label>
-                                                <div className="relative">
-                                                    <Input className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="email@contoh.com" />
-                                                    <HugeiconsIcon icon={Mail} size={18} className="absolute left-3 top-3.5 text-gray-300" />
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Email</Label>
+                                                    <div className="relative">
+                                                        <Input
+                                                            className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="email@contoh.com"
+                                                            withValidation
+                                                            name={`attendees.${index}.email`}
+                                                        />
+                                                        <HugeiconsIcon icon={Mail} size={18} className="absolute left-3 top-3.5 text-gray-300" />
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nomor WhatsApp</Label>
-                                                <div className="relative">
-                                                    <Input className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="0812xxxx" />
-                                                    <HugeiconsIcon icon={Phone} size={18} className="absolute left-3 top-3.5 text-gray-300" />
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Nomor WhatsApp</Label>
+                                                    <div className="relative">
+                                                        <Input
+                                                            className="h-12 pl-10 bg-gray-50 rounded-xl focus-visible:ring-1 focus-visible:ring-blue-600" placeholder="0812xxxx"
+                                                            withValidation
+                                                            name={`attendees.${index}.phone`}
+                                                        />
+                                                        <HugeiconsIcon icon={Phone} size={18} className="absolute left-3 top-3.5 text-gray-300" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Jenis Kelamin</Label>
+                                                    <div className="relative">
+                                                        <Select
+                                                            withValidation
+                                                            name={`attendees.${index}.isMale`}
+                                                        >
+                                                            <SelectTrigger className="w-45 border-blue-600 ring-blue-600">
+                                                                <SelectValue placeholder="Jenis Kelamin" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectGroup>
+                                                                    <SelectItem value="laki-laki">Laki-Laki</SelectItem>
+                                                                    <SelectItem value="perempuan">Perempuan</SelectItem>
+                                                                </SelectGroup>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <HugeiconsIcon icon={UserIcon} size={18} className="absolute left-3 top-3.5 text-gray-300" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </section>
+                                    ))}
+                                </form>
+                            </FormProviderWrapper>
                         )}
                     </div>
 
@@ -118,7 +188,7 @@ export default function BookingPage() {
                                                 <HugeiconsIcon icon={Ticket} size={16} className="text-blue-400" />
                                                 <span className="font-medium">Kursi {seat.seat_number}</span>
                                             </div>
-                                            <span className="font-bold">Rp {seat.price.toLocaleString()}</span>
+                                            <span className="font-bold">Rp {seat.ticket_category.base_price.toLocaleString()}</span>
                                         </div>
                                     ))
                                 )}
@@ -144,6 +214,7 @@ export default function BookingPage() {
 
                             <Button
                                 disabled={selectedSeats.length === 0}
+                                onClick={form.handleSubmit(onSubmit)}
                                 className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-lg shadow-lg active:scale-95 transition-all"
                             >
                                 Bayar Sekarang

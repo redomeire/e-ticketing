@@ -1,31 +1,30 @@
 "use client";
-
-import { useMemo } from 'react';
 import SeatGrid from "./SeatGrid";
-import type { Seat } from "@/modules/event/types/order";
+import { IGetEventSeatsResponse } from '../../repositories/event.repository';
+import { useGetEventSeats } from "../../hooks/useEventRepository";
 
 interface SeatSelectorProps {
-    selected_seat_ids: number[];
-    on_seat_click: (seat: Seat) => void;
+    selectedSeatIds: number[];
+    onSeatClick: (seat: IGetEventSeatsResponse) => void;
+    slug: string;
 }
 
-export default function SeatSelector({ selected_seat_ids, on_seat_click }: SeatSelectorProps) {
-    const seats_data = useMemo(() => {
-        return Array.from({ length: 5 }, (_, r) =>
-            Array.from({ length: 10 }, (_, c) => ({
-                id: r * 10 + c,
-                seat_number: `${String.fromCharCode(65 + r)}${c + 1}`,
-                is_available: Math.random() > 0.2,
-                price: 150000
-            }))
-        );
-    }, []);
-
+export default function SeatSelector({ selectedSeatIds, onSeatClick, slug }: SeatSelectorProps) {
+    const { data: seats, isPending, isError } = useGetEventSeats({
+        payload: {
+            slug
+        }
+    }, {
+        refetchOnWindowFocus: false,
+        staleTime: Infinity,
+    })
+    if (isPending || !seats) return <div>Loading...</div>;
+    if (isError) return <div>Error loading seats</div>;
     return (
         <SeatGrid
-            seats={seats_data}
-            selected_seats={selected_seat_ids}
-            on_seat_click={on_seat_click}
+            seats={seats?.data}
+            selectedSeats={selectedSeatIds}
+            onSeatClick={onSeatClick}
         />
     );
 }
