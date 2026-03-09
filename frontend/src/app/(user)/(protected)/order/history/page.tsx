@@ -39,7 +39,7 @@ function PageContent() {
         }
     }, {
         refetchOnWindowFocus: false,
-        staleTime: Infinity
+        staleTime: 1000 * 60 * 5,
     });
 
     const stats = useMemo(() => {

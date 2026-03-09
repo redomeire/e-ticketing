@@ -53,14 +53,14 @@ export default async function Page({ params }: Props) {
             <section className="relative w-full md:h-75">
                 <div
                     className="absolute inset-0 bg-cover bg-center blur-xl opacity-60"
-                    style={{ backgroundImage: `url(${event.cover_image_url ?? event_data.image_url})` }}
+                    style={{ backgroundImage: `url(${event.cover_image_url ?? "/images/placeholder.png"})` }}
                 />
 
                 <div className="container mx-auto px-0 h-full flex flex-col md:flex-row items-center gap-8 relative z-10">
                     <div className="absolute bottom-0 right-0 w-50 md:w-120 h-2/3 rounded-t-2xl overflow-hidden mt-8 md:mt-0 order-2 md:block hidden">
                         <div className="">
                             <Image
-                                src={event.cover_image_url ?? event_data.image_url}
+                                src={event.cover_image_url ?? "/images/placeholder.png"}
                                 alt={event.name}
                                 fill
                                 className="object-cover"

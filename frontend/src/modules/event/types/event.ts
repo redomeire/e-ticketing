@@ -36,9 +36,20 @@ interface IEventCategory {
     name: string;
 }
 
+interface IAttendee {
+    id: number;
+    name: string;
+    email: string;
+    is_male: boolean;
+    phone: string;
+    seat_id: number;
+    order_id: number;
+}
+
 export type {
     IEvent,
     IEventTicketCategory,
     IEventSeat,
-    IEventCategory
+    IEventCategory,
+    IAttendee
 };

@@ -7,7 +7,9 @@ const AUTH_PATHS = ["/auth/login", "/auth/register"];
 const PROTECTED_PATTERNS = [
     /^\/event\/[^\/]+\/order$/,
     /^\/payment\/success$/,
-    /^\/payment\/error$/
+    /^\/payment\/error$/,
+    /^\/order\/history$/,
+    /^\/order\/history\/\d+$/,
 ];
 
 export default function withAuth(

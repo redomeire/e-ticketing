@@ -1,6 +1,7 @@
 import api from "@/config/api";
 import { IHttpRequest, IHttpResponse, IPaginatedData } from "@/config/http";
 import { IOrderHistory } from "../types/order";
+import { IAttendee } from "@/modules/event/types/event";
 
 interface ICheckoutRequest {
     attendees: {
@@ -38,14 +39,45 @@ const getOrderHistory = async (
     return response.data;
 }
 
+interface IGetOrderHistoryDetailRequest {
+    orderId: number;
+}
+
+type IGetOrderHistoryDetailResponse = {
+    id: number;
+    invoice_id: string;
+    status: string;
+    total_amount: number;
+    base_amount: number;
+    created_at: string;
+    event_name: string;
+    start_time: string;
+    end_time: string;
+    location: string;
+    attendees: (IAttendee & { category: string; seat_number: string })[];
+}
+
+const getOrderHistoryDetail = async (
+    params: IHttpRequest<IGetOrderHistoryDetailRequest>
+): Promise<IHttpResponse<IGetOrderHistoryDetailResponse>> => {
+    const response = await api.get(
+        `/event/orders/${params.payload?.orderId}`,
+        params.options
+    );
+    return response.data;
+}
+
 const orderRepository = {
     checkout,
-    getOrderHistory
+    getOrderHistory,
+    getOrderHistoryDetail
 }
 
 export type {
     ICheckoutRequest,
-    ICheckoutResponse
+    ICheckoutResponse,
+    IGetOrderHistoryDetailRequest,
+    IGetOrderHistoryDetailResponse
 }
 
 export default orderRepository;

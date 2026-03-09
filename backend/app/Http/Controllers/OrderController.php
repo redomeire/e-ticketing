@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\OrderDetailResource;
 use App\Jobs\RetrieveCheckoutJob;
 use App\Models\EventSeat;
 use App\Models\Order;
@@ -41,6 +42,7 @@ class OrderController extends Controller
                 ->selectRaw('MIN(events.end_time) as end_time')
                 ->selectRaw('COUNT(order_items.id) as total_tickets')
                 ->where('orders.user_id', $user->id)
+                ->whereNot('orders.status', 'expired')
                 ->groupBy(
                     'orders.id',
                     'orders.invoice_id',
@@ -54,6 +56,36 @@ class OrderController extends Controller
             return $this->sendResponse($orders, 'Orders retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve orders', [
+                $e->getMessage()
+            ], 500);
+        }
+    }
+    public function show($id)
+    {
+        try {
+            $user = auth()->user();
+            $order = Order::where('id', $id)
+                ->where('user_id', $user->id)
+                ->with([
+                    'orderItem:id,order_id,seat_id,price_at_purchase',
+                    'orderItem.seat:id,ticket_category_id,seat_number',
+                    'orderItem.seat.ticketCategory:id,event_id,name,base_price',
+                    'orderItem.seat.ticketCategory.event:id,name,start_time,end_time,location',
+                    'attendee:id,order_id,seat_id,name,email,phone,is_male',
+                    'attendee.seat:id,seat_number',
+                    'attendee.seat.ticketCategory:id,name'
+                ])
+                ->select('id', 'invoice_id', 'status', 'total_amount', 'created_at')
+                ->first();
+            if (!$order) {
+                return $this->sendError('Order not found', [], 404);
+            }
+            return (new OrderDetailResource($order))->additional([
+                'success' => true,
+                'message' => 'Order details retrieved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->sendError('Failed to retrieve order details', [
                 $e->getMessage()
             ], 500);
         }

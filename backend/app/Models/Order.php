@@ -19,6 +19,9 @@ class Order extends Model
         'status',
         'total_amount'
     ];
+    protected $casts = [
+        'total_amount' => 'float',
+    ];
     public function user()
     {
         return $this->belongsTo(User::class);

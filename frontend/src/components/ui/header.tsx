@@ -51,8 +51,11 @@ const Header = () => {
     ];
 
     const handleLogout = async () => {
-        await logout();
-        signOut();
+        try {
+            await logout();
+        } finally {
+            signOut();
+        }
     }
 
     const onSearch = (e: FormEvent) => {

@@ -1,6 +1,6 @@
 import { IHttpRequest, IHttpResponse, IPaginatedData } from "@/config/http";
 import { useMutation, UseMutationOptions, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
-import orderRepository, { ICheckoutRequest, ICheckoutResponse } from "../hooks/order.repository";
+import orderRepository, { ICheckoutRequest, ICheckoutResponse, IGetOrderHistoryDetailRequest, IGetOrderHistoryDetailResponse } from "../hooks/order.repository";
 import { IOrderHistory } from "../types/order";
 
 export function useCheckout(
@@ -24,6 +24,17 @@ export function useGetOrderHistory(
     return useQuery({
         queryKey: ["order", req.options],
         queryFn: () => orderRepository.getOrderHistory(req),
+        ...options
+    });
+}
+
+export function useGetOrderHistoryDetail(
+    req: IHttpRequest<IGetOrderHistoryDetailRequest>,
+    options?: Omit<UseQueryOptions<unknown, unknown, IHttpResponse<IGetOrderHistoryDetailResponse>>, 'queryKey'>
+) {
+    return useQuery({
+        queryKey: ["order", "detail", req.options],
+        queryFn: () => orderRepository.getOrderHistoryDetail(req),
         ...options
     });
 }

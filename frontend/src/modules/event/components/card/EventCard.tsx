@@ -22,10 +22,10 @@ export default function EventCard({ event, ticketCategories }: EventCardProps) {
         <div className="group cursor-pointer bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full">
             <div className="relative aspect-4/5 overflow-hidden">
                 <Image
-                    src={event.cover_image_url || "/placeholder-image.png"}
+                    src={event.cover_image_url || "/images/placeholder.png"}
                     alt={event.name}
                     fill
-                    className="object-cover transform group-hover:scale-105 transition-transform duration-500"
+                    className={`object-cover transform group-hover:scale-105 transition-transform duration-500 ${event.is_active ? "" : "grayscale"}`}
                 />
                 <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
                     <p className="text-[10px] font-bold text-[#002558] uppercase tracking-wider">{event.is_active ? "Active" : "Inactive"}</p>
