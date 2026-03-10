@@ -27,7 +27,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         }),
                     });
                     const result = await res.json();
-                    if (result.status === false) {
+                    if (result.success === false) {
                         console.log(result);
                         throw new Error(result.message)
                     }

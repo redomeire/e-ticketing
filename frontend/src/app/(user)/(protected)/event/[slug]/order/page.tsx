@@ -66,7 +66,6 @@ export default function BookingPage() {
     };
 
     const total_price = useMemo(() => {
-        console.log(selectedSeats)
         return selectedSeats.reduce(
             (acc, curr) => acc + parseFloat(curr.base_price), 0
         );
