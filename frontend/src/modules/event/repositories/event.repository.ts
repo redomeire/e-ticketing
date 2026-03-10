@@ -44,9 +44,11 @@ interface IGetEventSeatsRequest {
     slug: string;
 }
 
-type IGetEventSeatsResponse = IEventSeat & {
-    ticket_category: IEventTicketCategory;
-};
+type IGetEventSeatsResponse = {
+    max_row_index: number;
+    max_column_index: number;
+    seats: (IEventSeat & { base_price: string, category_name: string })[];
+}
 
 const getEventSeats = async (
     params: IHttpRequest<IGetEventSeatsRequest>

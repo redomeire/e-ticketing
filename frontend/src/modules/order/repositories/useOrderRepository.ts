@@ -33,7 +33,7 @@ export function useGetOrderHistoryDetail(
     options?: Omit<UseQueryOptions<unknown, unknown, IHttpResponse<IGetOrderHistoryDetailResponse>>, 'queryKey'>
 ) {
     return useQuery({
-        queryKey: ["order", "detail", req.options],
+        queryKey: ["order", "detail", req.payload?.orderId],
         queryFn: () => orderRepository.getOrderHistoryDetail(req),
         ...options
     });

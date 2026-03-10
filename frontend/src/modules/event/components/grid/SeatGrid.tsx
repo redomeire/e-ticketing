@@ -1,18 +1,27 @@
 "use client";
 
-import { cn } from "@/lib/utils/cn";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ChairIcon } from '@hugeicons/core-free-icons';
 import { IGetEventSeatsResponse } from '../../repositories/event.repository';
 import { useMemo } from "react";
+import { IEventSeat } from "../../types/event";
+import EventSeatCard from "../card/EventSeatCard";
 
 interface SeatGridProps {
-    seats: IGetEventSeatsResponse[];
+    seats: IGetEventSeatsResponse["seats"];
+    maxRowIndex: number;
+    maxColumnIndex: number;
     selectedSeats: number[];
-    onSeatClick: (seat: IGetEventSeatsResponse) => void;
+    onSeatClick: (seat: IEventSeat & {
+        base_price: string; category_name: string
+    }) => void;
 }
 
-export default function SeatGrid({ seats, selectedSeats, onSeatClick }: SeatGridProps) {
+export default function SeatGrid({
+    seats,
+    selectedSeats,
+    onSeatClick,
+    maxColumnIndex,
+    maxRowIndex
+}: SeatGridProps) {
     const generateColor = (str: string) => {
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
@@ -30,7 +39,7 @@ export default function SeatGrid({ seats, selectedSeats, onSeatClick }: SeatGrid
     const categoryThemes = useMemo(() => {
         const themes: Record<string, ReturnType<typeof generateColor>> = {};
         seats.forEach(seat => {
-            const name = seat.ticket_category.name;
+            const name = seat.category_name;
             if (!themes[name]) {
                 themes[name] = generateColor(name);
             }
@@ -38,55 +47,48 @@ export default function SeatGrid({ seats, selectedSeats, onSeatClick }: SeatGrid
         return themes;
     }, [seats]);
 
-    const groupedSeats = useMemo(() => {
-        const groups: Record<string, IGetEventSeatsResponse[]> = {};
+    const group = useMemo(() => {
+        const grid: (IGetEventSeatsResponse["seats"][number] | null)[][]
+            = Array.from({ length: maxRowIndex }, () =>
+                Array.from({ length: maxColumnIndex }, () => null)
+            );
         seats.forEach(seat => {
-            const row = seat.seat_number.match(/[A-Z]+/)?.[0] || "Unknown";
-            if (!groups[row]) groups[row] = [];
-            groups[row].push(seat);
+            const row = seat.row_index;
+            const col = seat.column_index;
+            if (grid[row] && grid[row][col] === null) {
+                grid[row][col] = seat;
+            }
         });
-        return Object.values(groups);
-    }, [seats]);
+        return grid;
+    }, [maxColumnIndex, maxRowIndex, seats]);
 
     return (
         <div className="bg-white p-6 md:p-10 rounded-3xl border border-gray-100 shadow-sm overflow-x-auto">
             <div className="w-full h-2 bg-gray-200 rounded-full mb-16 relative">
                 <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Panggung / Layar</span>
             </div>
-
             <div className="flex flex-col gap-4 min-w-150">
-                {groupedSeats.map((row, rowIdx) => (
-                    <div key={rowIdx} className="flex justify-center gap-3">
+                {group.map((row, rowIndex) => (
+                    <div key={rowIndex} className="flex justify-center gap-3">
                         <div className="w-8 flex items-center justify-center text-xs font-bold text-gray-300">
-                            {String.fromCharCode(65 + rowIdx)}
+                            {String.fromCharCode(65 + rowIndex)}
                         </div>
 
-                        {row.map((seat) => {
-                            const isSelected = selectedSeats.includes(seat.id);
-                            const theme = categoryThemes[seat.ticket_category.name];
+                        {row.map((seat, colIndex) => {
+                            if (!seat) {
+                                return <div key={colIndex} className="w-10 h-10 rounded-lg flex items-center justify-center transition-all relative group border
+                                bg-gray-200 text-gray-300 border-transparent cursor-not-allowed" />;
+                            }
+                            const isSelected = selectedSeats.includes(seat?.id);
+                            const theme = categoryThemes[seat?.category_name];
 
-                            return (
-                                <button
-                                    key={seat.id}
-                                    disabled={!seat.is_available}
-                                    onClick={() => onSeatClick(seat)}
-                                    style={{
-                                        backgroundColor: isSelected ? theme.selected : (seat.is_available ? theme.bg : undefined),
-                                        color: isSelected ? 'white' : (seat.is_available ? theme.text : undefined),
-                                        borderColor: isSelected ? theme.selected : theme.border
-                                    }}
-                                    className={cn(
-                                        "w-10 h-10 rounded-lg flex items-center justify-center transition-all relative group border",
-                                        !seat.is_available && "bg-gray-100 text-gray-300 border-transparent cursor-not-allowed",
-                                        isSelected && "shadow-lg scale-105"
-                                    )}
-                                >
-                                    <HugeiconsIcon icon={ChairIcon} size={20} />
-                                    <span className="absolute -top-10 scale-0 group-hover:scale-100 transition-all bg-gray-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-20 shadow-xl pointer-events-none">
-                                        {seat.seat_number} - {seat.ticket_category.name}
-                                    </span>
-                                </button>
-                            );
+                            return <EventSeatCard
+                                key={seat.id}
+                                seat={seat}
+                                isSelected={isSelected}
+                                onSeatClick={onSeatClick}
+                                theme={theme}
+                            />
                         })}
                     </div>
                 ))}

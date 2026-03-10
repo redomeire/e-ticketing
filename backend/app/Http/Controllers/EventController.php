@@ -81,6 +81,7 @@ class EventController extends Controller
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
+                'terms_and_conditions' => 'nullable|string',
                 'start_time' => 'required|date|after:now',
                 'end_time' => 'required|date|after:start_time',
                 'location' => 'required|string|max:255',
@@ -106,6 +107,7 @@ class EventController extends Controller
                 'start_time' => $validated['start_time'],
                 'end_time' => $validated['end_time'],
                 'location' => $validated['location'],
+                'terms_and_conditions' => $validated['terms_and_conditions'],
             ]));
             // creating categories
             $event_category_ids = [];
@@ -236,13 +238,17 @@ class EventController extends Controller
     public function getSeats($event_id)
     {
         try {
-            $seats = EventSeat::with(['ticketCategory:id,name,base_price'])
-                ->whereHas('ticketCategory', function ($query) use ($event_id) {
-                    $query->where('event_id', $event_id);
-                })
-                ->select('id', 'ticket_category_id', 'seat_number', 'row_index', 'column_index', 'is_available', 'locked_until')
+            $event = Event::find($event_id);
+            $seats = DB::table('event_seats as e')
+                ->join('event_ticket_categories as tc', 'e.ticket_category_id', '=', 'tc.id')
+                ->where('tc.event_id', $event_id)
+                ->select('e.id', 'e.row_index', 'e.column_index', 'e.seat_number', 'e.is_available', 'e.locked_until', 'tc.name as category_name', 'tc.base_price')
                 ->get();
-            return $this->sendResponse($seats, 'Seats retrieved successfully');
+            return $this->sendResponse([
+                'max_row_index' => $event->max_row_index,
+                'max_column_index' => $event->max_column_index,
+                'seats' => $seats,
+            ], 'Seats retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve seats', [
                 'error' => $e->getMessage(),

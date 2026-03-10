@@ -27,7 +27,7 @@ export function useGetEventDetail(
 export function useGetEventSeats(
     req: IHttpRequest<IGetEventSeatsRequest>,
     options?: Omit<UseQueryOptions<unknown, unknown,
-        IHttpResponse<IGetEventSeatsResponse[]>>, 'queryKey'>
+        IHttpResponse<IGetEventSeatsResponse>>, 'queryKey'>
 ) {
     return useQuery({
         queryKey: ["event-seats", req.payload],
