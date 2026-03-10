@@ -20,10 +20,10 @@ import Link from "next/link"
 const data = {
     navMain: [
         { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
-        { title: "Events", url: "/admin/event", icon: Calendar },
-        { title: "Tickets & Seats", url: "/admin/seat", icon: Ticket },
-        { title: "Users", url: "/admin/user", icon: Users },
-        { title: "Settings", url: "/admin/setting", icon: Settings },
+        { title: "Events", url: "/admin/events", icon: Calendar },
+        { title: "Tickets & Seats", url: "/admin/seats", icon: Ticket },
+        { title: "Users", url: "/admin/users", icon: Users },
+        { title: "Settings", url: "/admin/settings", icon: Settings },
     ],
 }
 
