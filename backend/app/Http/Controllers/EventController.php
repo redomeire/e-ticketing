@@ -32,7 +32,8 @@ class EventController extends Controller
             $search = $validated['search'];
 
             $query = Event::with(['ticketCategories:id,event_id,name,base_price,quota'])
-                ->select('id', 'name', 'start_time', 'end_time', 'location', 'slug', 'is_active');
+                ->select('id', 'name', 'start_time', 'end_time', 'location', 'slug', 'is_active', 'cover_image_url')
+                ->where('is_active', true);
             if ($search) {
                 $query->where('name', 'ILIKE', "%$search%");
             }
@@ -45,9 +46,7 @@ class EventController extends Controller
     public function show($slug)
     {
         try {
-            // select event with categories and seats
             $event = Event::with([
-                // Ambil data seats hanya yang diperlukan untuk UI Denah
                 'ticketCategories.seats:id,ticket_category_id,is_available,locked_until,seat_number',
                 'categories:id,name',
             ])
@@ -64,7 +63,7 @@ class EventController extends Controller
                         ]);
                     }
                 ])
-                ->select('id', 'name', 'description', 'is_active', 'start_time', 'end_time', 'location', 'slug')
+                ->select('id', 'name', 'description', 'is_active', 'start_time', 'end_time', 'location', 'slug', 'cover_image_url', 'terms_and_conditions')
                 ->where('slug', $slug)
                 ->first();
             if (!$event) {
@@ -150,8 +149,9 @@ class EventController extends Controller
         try {
             $validator = Validator::make($request->all(), [
                 'name' => 'sometimes|required|string|max:255',
-                'description' => 'nullable|string',
+                'description' => 'sometimes|string',
                 'is_active' => 'sometimes|required|boolean',
+                'cover_image_url' => 'sometimes|url|max:255',
             ]);
             if ($validator->fails()) {
                 return $this->sendError('Validation Error', $validator->errors(), 422);

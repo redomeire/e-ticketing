@@ -20,6 +20,7 @@ class Event extends Model
         'max_row_index',
         'max_column_index',
         'slug',
+        'cover_image_url'
     ];
     public function ticketCategories()
     {
