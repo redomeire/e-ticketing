@@ -18,6 +18,8 @@ class EventSeat extends Model
         'is_available',
         'locked_until',
         'price',
+        'row_index',
+        'column_index',
     ];
     public function ticketCategory()
     {

@@ -76,6 +76,7 @@ class EventController extends Controller
     }
     public function store(Request $request)
     {
+        DB::beginTransaction();
         try {
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
@@ -90,58 +91,67 @@ class EventController extends Controller
                 'ticket_categories.*.name' => 'required|string|max:255',
                 'ticket_categories.*.base_price' => 'required|numeric|min:0',
                 'ticket_categories.*.quota' => 'required|integer|min:1',
+                'ticket_categories.*.seats' => 'required|array|min:1',
+                'ticket_categories.*.seats.*.row' => 'required|integer|min:0',
+                'ticket_categories.*.seats.*.column' => 'required|integer|min:0',
+                'ticket_categories.*.seats.*.number' => 'required|string|max:10',
                 'event_categories' => 'nullable|array',
                 'event_categories.*.name' => 'required|string|max:255',
             ]);
             if ($validator->fails()) {
                 return $this->sendError('Validation Error', $validator->errors(), 422);
             }
-            $validated = $validator->validated();
-            DB::beginTransaction();
-            $event = Event::create(array_merge([
-                'name' => $validated['name'],
-                'description' => $validated['description'],
-                'max_row_index' => $validated['max_row_index'],
-                'max_column_index' => $validated['max_column_index'],
-                'start_time' => $validated['start_time'],
-                'end_time' => $validated['end_time'],
-                'location' => $validated['location'],
-                'terms_and_conditions' => $validated['terms_and_conditions'],
+            $event = Event::create($request->only([
+                'name',
+                'description',
+                'max_row_index',
+                'max_column_index',
+                'start_time',
+                'end_time',
+                'location',
+                'terms_and_conditions'
             ]));
-            // creating categories
-            $event_category_ids = [];
-            if (isset($validated['event_categories'])) {
-                foreach ($validated['event_categories'] as $category) {
-                    $event_category = EventCategory::firstOrCreate(['name' => $category['name']]);
-                    $event_category_ids[] = $event_category->id;
+            if ($request->has('event_categories')) {
+                $names = collect($request->event_categories)->pluck('name')->unique();
+                foreach ($names as $name) {
+                    EventCategory::firstOrCreate(['name' => $name]);
                 }
-                $event->categories()->sync($event_category_ids);
+                $categoryIds = EventCategory::whereIn('name', $names)->pluck('id');
+                $event->categories()->sync($categoryIds);
             }
-            $ticket_categories = [];
-            foreach ($validated['ticket_categories'] as $category) {
-                $ticket_categories[] = new EventTicketCategory([
-                    'event_id' => $event->id,
-                    'name' => $category['name'],
-                    'base_price' => $category['base_price'],
-                    'quota' => $category['quota'],
+            $allSeatsToInsert = [];
+            $totalSeatsInPayload = 0;
+            foreach ($request->ticket_categories as $catData) {
+                $category = $event->ticketCategories()->create([
+                    'name' => $catData['name'],
+                    'base_price' => $catData['base_price'],
+                    'quota' => $catData['quota'],
                 ]);
+                foreach ($catData['seats'] as $seat) {
+                    $allSeatsToInsert[] = [
+                        'ticket_category_id' => $category->id,
+                        'row_index' => $seat['row'],
+                        'column_index' => $seat['column'],
+                        'seat_number' => $seat['number'],
+                        'is_available' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                    $totalSeatsInPayload++;
+                }
             }
-            // if quota exceed the dot product of max_row_index and max_column_index, return error
-            $total_quota = array_sum(array_column($validated['ticket_categories'], 'quota'));
-            $max_capacity = ($validated['max_row_index'] + 1) * ($validated['max_column_index'] + 1);
-            if ($total_quota > $max_capacity) {
-                DB::rollBack();
-                return $this->sendError('Validation Error', ['ticket_categories' => 'Total quota exceed the maximum capacity of the event'], 422);
+            if (!empty($allSeatsToInsert)) {
+                EventSeat::insert($allSeatsToInsert);
             }
-            $saved_ticket_categories = $event->ticketCategories()->saveMany($ticket_categories);
+            $maxCapacity = ($event->max_row_index + 1) * ($event->max_column_index + 1);
+            if ($totalSeatsInPayload > $maxCapacity) {
+                throw new \Exception("Total seats exceed grid capacity.");
+            }
             DB::commit();
-            return $this->sendResponse([
-                'event' => $event,
-                'ticket_categories' => $saved_ticket_categories,
-                'event_categories' => $event->categories()->get(),
-            ], 'Event created successfully', 201);
+            return $this->sendResponse($event->load('ticketCategories.seats'), 'Event created.', 201);
         } catch (\Exception $e) {
-            return $this->sendError('Error creating event', ['error' => $e->getMessage()], 500);
+            DB::rollBack();
+            return $this->sendError('Failed to create event', ['error' => $e->getMessage()], 500);
         }
     }
     public function update(Request $request, $id)
