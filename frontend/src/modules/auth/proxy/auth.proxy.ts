@@ -11,6 +11,7 @@ const PROTECTED_PATTERNS = [
     /^\/payment\/error$/,
     /^\/order\/history$/,
     /^\/order\/history\/\d+$/,
+    /^\/user(\/.*)?$/,
 ];
 
 const ADMIN_PROTECTED_PATTERNS = [
@@ -40,6 +41,9 @@ export default function withAuth(
             }
             if (isAdminPath && role !== "admin") {
                 return NextResponse.redirect(new URL("/", request.url));
+            }
+            if (isUserProtectedPath && role === "admin") {
+                return NextResponse.redirect(new URL("/admin", request.url));
             }
         }
 
