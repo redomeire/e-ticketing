@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react";
+import { Suspense, useMemo } from "react";
 import Link from "next/link";
 import {
     Table,
@@ -20,7 +20,6 @@ import {
 import {
     Pagination,
     PaginationContent,
-    PaginationEllipsis,
     PaginationItem,
     PaginationLink,
     PaginationNext,
@@ -36,27 +35,68 @@ import {
     PlusSignIcon as PlusIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { useAdminGetEvents, useAdminUpdateEvent } from "@/modules/event/hooks/useEventRepository";
+import { formatDate } from "@/lib/utils/formatDate";
+import { useRouter, useSearchParams } from "next/navigation";
+import { cn } from "@/lib/utils/cn";
 
-const initialEvents = [
-    { id: 1, name: "Resident Evil 9 Launch", slug: "re-9-launch", date: "12 Okt 2026", status: true, totalSeats: 500 },
-    { id: 2, name: "TEDx Bandung 2026", slug: "tedx-bdg-26", date: "20 Nov 2026", status: true, totalSeats: 1200 },
-    { id: 3, name: "Happy Music Festival", slug: "happy-music-fest", date: "05 Des 2026", status: false, totalSeats: 2500 },
-    { id: 4, name: "Tech Conference UB", slug: "tech-conf-ub", date: "15 Jan 2027", status: true, totalSeats: 300 },
-    { id: 5, name: "Web Dev Workshop", slug: "web-dev-ws", date: "10 Feb 2027", status: false, totalSeats: 100 },
-];
+function PageContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const searchQuery = searchParams.get("search") || "";
+    const pageQuery = searchParams.get("page") || "1";
+    const limitQuery = searchParams.get("limit") || "10";
 
-export default function AdminEventPage() {
-    const [events, setEvents] = useState(initialEvents);
+    const {
+        data: events,
+        isPending
+    } = useAdminGetEvents({
+        options: {
+            params: {
+                page: parseInt(pageQuery, 10),
+                limit: parseInt(limitQuery, 10),
+                search: searchQuery
+            }
+        }
+    }, {
+        refetchOnWindowFocus: false,
+        staleTime: Infinity
+    });
 
-    const toggleStatus = (id: number) => {
-        setEvents(events.map(event =>
-            event.id === id ? { ...event, status: !event.status } : event
-        ));
+    const { mutateAsync } = useAdminUpdateEvent({})
+
+    const toggleStatus = async (id: number, isActive: boolean) => {
+        await mutateAsync({
+            id,
+            is_active: !isActive
+        })
     };
+
+    const capacities = useMemo(() => {
+        if (!events) return {};
+        const capacityMap: Record<number, number> = {};
+        events.data.data.forEach(event => {
+            const totalSeats = event.ticket_categories.reduce((sum, category) => sum + category.quota, 0);
+            capacityMap[event.id] = totalSeats;
+        });
+        return capacityMap;
+    }, [events])
+
+    const setParams = (param: Record<string, string | number>) => {
+        const newParams = new URLSearchParams(searchParams.toString());
+        newParams.set(Object.keys(param)[0], Object.values(param)[0].toString());
+        router.push(`?${newParams.toString()}`);
+    }
+
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const formData = new FormData(e.target as HTMLFormElement);
+        const searchValue = formData.get("search")?.toString() || "";
+        setParams({ search: searchValue });
+    }
 
     return (
         <div className="space-y-8 p-2">
-            {/* --- HEADER --- */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Manajemen Event</h1>
@@ -70,19 +110,20 @@ export default function AdminEventPage() {
                     </Button>
                 </Link>
             </div>
-
-            {/* --- CONTROLS --- */}
             <div className="flex flex-col md:flex-row gap-6 justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div className="relative w-full md:w-112.5">
+                <form onSubmit={handleSearchSubmit} className="relative w-full md:w-112.5">
                     <HugeiconsIcon icon={SearchIcon} size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                     <Input
+                        name="search"
                         placeholder="Cari event berdasarkan nama atau slug..."
                         className="h-12 pl-12 border-slate-200 focus-visible:ring-blue-600 rounded-xl text-base font-medium"
                     />
-                </div>
+                </form>
                 <div className="flex items-center gap-4">
                     <span className="text-base text-slate-500 font-bold whitespace-nowrap">Tampilkan:</span>
-                    <Select defaultValue="10">
+                    <Select onValueChange={(val) => {
+                        setParams({ limit: val });
+                    }} defaultValue="10">
                         <SelectTrigger className="w-25 h-12 border-slate-200 rounded-xl text-base font-bold">
                             <SelectValue />
                         </SelectTrigger>
@@ -94,81 +135,114 @@ export default function AdminEventPage() {
                     </Select>
                 </div>
             </div>
-
-            {/* --- TABLE --- */}
             <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <Table>
-                    <TableHeader className="bg-slate-50/80">
-                        <TableRow className="hover:bg-transparent h-16">
-                            <TableHead className="font-bold text-slate-700 text-sm uppercase px-8">Informasi Event</TableHead>
-                            <TableHead className="font-bold text-slate-700 text-sm uppercase px-6">Tanggal</TableHead>
-                            <TableHead className="font-bold text-slate-700 text-sm uppercase px-6 text-center">Kapasitas</TableHead>
-                            <TableHead className="font-bold text-slate-700 text-sm uppercase px-6 text-center">Status</TableHead>
-                            <TableHead className="font-bold text-slate-700 text-sm uppercase px-8 text-right">Aksi</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {events.map((event) => (
-                            <TableRow key={event.id} className="hover:bg-slate-50/40 transition-colors border-slate-50 h-20">
-                                <TableCell className="px-8">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="font-bold text-slate-900 text-base tracking-tight">{event.name}</span>
-                                        <span className="text-sm text-slate-400 font-semibold tracking-wide">/{event.slug}</span>
-                                    </div>
-                                </TableCell>
-                                <TableCell className="px-6 text-base text-slate-600 font-semibold">{event.date}</TableCell>
-                                <TableCell className="px-6 text-center font-bold text-slate-800 text-base">{event.totalSeats}</TableCell>
-                                <TableCell className="px-6">
-                                    <div className="flex flex-col items-center gap-3">
-                                        <Badge className={`rounded-lg font-bold text-xs uppercase px-3 py-1 shadow-none border-none ${event.status ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                                            {event.status ? "Aktif" : "Non-Aktif"}
-                                        </Badge>
-                                        <Switch
-                                            checked={event.status}
-                                            onCheckedChange={() => toggleStatus(event.id)}
-                                            className="data-[state=checked]:bg-emerald-500 scale-110"
-                                        />
-                                    </div>
-                                </TableCell>
-                                <TableCell className="px-8 text-right">
-                                    <Link href={`/admin/events/${event.slug}`}>
-                                        <Button variant="ghost" size="icon" className="h-12 w-12 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all">
-                                            <HugeiconsIcon icon={ViewIcon} size={24} />
-                                        </Button>
-                                    </Link>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
+                {
+                    isPending ? (
+                        <p className="text-center text-slate-500 py-10">
+                            Memuat event...
+                        </p>
+                    ) : !events?.data.data || events.data.data.length === 0 ? (
+                        <p className="text-center text-slate-500 py-10">
+                            Tidak ada event yang tersedia.
+                        </p>
+                    ) : (
+                        <Table>
+                            <TableHeader className="bg-slate-50/80">
+                                <TableRow className="hover:bg-transparent h-16">
+                                    <TableHead className="font-bold text-slate-700 text-sm uppercase px-8">Informasi Event</TableHead>
+                                    <TableHead className="font-bold text-slate-700 text-sm uppercase px-6">Tanggal</TableHead>
+                                    <TableHead className="font-bold text-slate-700 text-sm uppercase px-6 text-center">Kapasitas</TableHead>
+                                    <TableHead className="font-bold text-slate-700 text-sm uppercase px-6 text-center">Status</TableHead>
+                                    <TableHead className="font-bold text-slate-700 text-sm uppercase px-8 text-right">Aksi</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {events?.data.data.map((event) => (
+                                    <TableRow key={event.id} className="hover:bg-slate-50/40 transition-colors border-slate-50 h-20">
+                                        <TableCell className="px-8">
+                                            <div className="flex flex-col gap-1">
+                                                <span className="font-bold text-slate-900 text-base tracking-tight">{event.name}</span>
+                                                <span className="text-sm text-slate-400 font-semibold tracking-wide">/{event.slug}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="px-6 text-base text-slate-600 font-semibold">{formatDate(event.start_time)}</TableCell>
+                                        <TableCell className="px-6 text-center font-bold text-slate-800 text-base">{capacities[event.id]}</TableCell>
+                                        <TableCell className="px-6">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <Badge className={`rounded-lg font-bold text-xs uppercase px-3 py-1 shadow-none border-none ${event.is_active ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                                                    {event.is_active ? "Aktif" : "Non-Aktif"}
+                                                </Badge>
+                                                <Switch
+                                                    checked={event.is_active}
+                                                    onCheckedChange={() => toggleStatus(event.id, event.is_active)}
+                                                    className="data-[state=checked]:bg-emerald-500 scale-110"
+                                                />
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="px-8 text-right">
+                                            <Link href={`/admin/events/${event.slug}`}>
+                                                <Button variant="ghost" size="icon" className="h-12 w-12 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all">
+                                                    <HugeiconsIcon icon={ViewIcon} size={24} />
+                                                </Button>
+                                            </Link>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    )
+                }
             </div>
-
-            {/* --- PAGINATION --- */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-8 py-6">
                 <p className="text-base text-slate-500 font-bold">Menampilkan 1 - 5 dari 24 event</p>
-                <Pagination className="justify-end w-auto mx-0">
-                    <PaginationContent className="gap-2">
-                        <PaginationItem>
-                            <PaginationPrevious href="#" className="rounded-xl border-slate-200 h-11 px-5 text-base font-bold hover:bg-slate-50" />
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#" isActive className="rounded-xl h-11 w-11 bg-blue-600 text-white border-blue-600 text-base font-black shadow-lg">1</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#" className="rounded-xl h-11 w-11 border-slate-200 text-base font-bold hover:bg-slate-50">2</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationLink href="#" className="rounded-xl h-11 w-11 border-slate-200 text-base font-bold hover:bg-slate-50">3</PaginationLink>
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationEllipsis className="text-slate-400" />
-                        </PaginationItem>
-                        <PaginationItem>
-                            <PaginationNext href="#" className="rounded-xl border-slate-200 h-11 px-5 text-base font-bold hover:bg-slate-50" />
-                        </PaginationItem>
-                    </PaginationContent>
-                </Pagination>
+                <div>
+                    <Pagination className="w-fit">
+                        <PaginationContent className="w-fit ">
+                            {events?.data.links && events.data.links.length > 0 && events.data.links.map((link, index) => {
+                                if (link.label.includes("Previous")) {
+                                    return (
+                                        <PaginationPrevious key={index} href="#" className="cursor-not-allowed opacity-50 bg-white border-gray-100 rounded-xl" />
+                                    )
+                                }
+                                else if (link.label.includes("Next")) {
+                                    return (
+                                        <PaginationNext key={index} href="#" className="cursor-not-allowed opacity-50 bg-white border-gray-100 rounded-xl" />
+                                    )
+                                }
+                                return (
+                                    <PaginationItem key={index}>
+                                        <PaginationLink
+                                            href={`?${new URLSearchParams({
+                                                ...Object.fromEntries(searchParams.entries()),
+                                                page: link.page ? link.page.toString() : pageQuery
+                                            }).toString()}`}
+                                            isActive={link.active}
+                                            className={cn(
+                                                "rounded-xl font-bold transition-all",
+                                                link.active ? "bg-blue-600 text-white hover:text-white hover:bg-blue-700 shadow-lg shadow-blue-100" : "bg-white border-gray-100"
+                                            )}
+                                        >
+                                            {link.label}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                )
+                            })}
+                        </PaginationContent>
+                    </Pagination>
+                </div>
             </div>
         </div>
     );
+}
+
+export default function Page() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <p className="text-slate-500 text-base">Memuat data event...</p>
+            </div>
+        }>
+            <PageContent />
+        </Suspense>
+    )
 }

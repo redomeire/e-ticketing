@@ -333,4 +333,33 @@ class EventController extends Controller
         $attendees = Attendee::all();
         return $this->sendResponse($attendees, 'Attendees retrieved successfully');
     }
+    public function adminGetEvents(Request $request)
+    {
+        try {
+            $validater = Validator::make($request->query(), [
+                'search' => 'nullable|string|max:255',
+                'limit' => 'sometimes|integer|min:1',
+                'page' => 'sometimes|integer|min:1',
+            ]);
+            if ($validater->fails()) {
+                return $this->sendError('Validation Error', $validater->errors(), 422);
+            }
+            $validated = $validater->validated();
+            $limit = $validated['limit'] ?? 10;
+            $page = $validated['page'] ?? 1;
+            $search = $validated['search'];
+            $events = null;
+
+            $query = Event::with(['ticketCategories:event_id,quota'])
+                ->select('id', 'name', 'start_time', 'slug', 'is_active')
+                ->orderBy('created_at', 'desc');
+            if ($search) {
+                $query->where('name', 'ILIKE', "%$search%");
+            }
+            $events = $query->paginate($limit, ['*'], 'page', $page);
+            return $this->sendResponse($events, 'Events retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->sendError('Error retrieving events', ['error' => $e->getMessage()], 500);
+        }
+    }
 }

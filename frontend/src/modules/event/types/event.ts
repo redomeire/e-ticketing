@@ -35,6 +35,7 @@ interface IEventCategory {
     id: number;
     name: string;
     base_price: number;
+    quota: number;
 }
 
 interface IAttendee {

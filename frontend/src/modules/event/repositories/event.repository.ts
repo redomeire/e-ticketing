@@ -60,10 +60,45 @@ const getEventSeats = async (
     return response.data;
 }
 
+type IAdminGetEventsResponse =
+    Pick<IEvent, 'id' | 'name' | 'start_time' | 'slug' | 'is_active'>
+    & {
+        ticket_categories: Pick<IEventCategory, 'id' | 'quota'>[]
+    }
+
+const adminGetEvents = async (
+    params: IHttpRequest<{}>
+): Promise<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>> => {
+    const response = await api.get(
+        '/event/admin',
+        params.options
+    );
+    return response.data;
+}
+
+type IAdminUpdateEventRequest =
+    Pick<IEvent, 'id' | 'description' | 'is_active' | 'cover_image_url'>
+
+type IAdminUpdateEventResponse = IEvent;
+
+const adminUpdateEvent = async (
+    params: IHttpRequest<IAdminUpdateEventRequest>
+): Promise<IHttpResponse<IAdminUpdateEventResponse>> => {
+    console.log(params);
+    const response = await api.put(
+        `/event/admin/${params.payload?.id}`,
+        params.payload,
+        params.options
+    );
+    return response.data;
+}
+
 const eventRepository = {
     getEvents,
     getEventDetail,
-    getEventSeats
+    getEventSeats,
+    adminGetEvents,
+    adminUpdateEvent
 }
 
 export type {
@@ -71,7 +106,10 @@ export type {
     IGetEventDetailResponse,
     IGetEventDetailRequest,
     IGetEventSeatsRequest,
-    IGetEventSeatsResponse
+    IGetEventSeatsResponse,
+    IAdminGetEventsResponse,
+    IAdminUpdateEventRequest,
+    IAdminUpdateEventResponse
 };
 
 export default eventRepository;

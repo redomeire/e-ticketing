@@ -30,17 +30,19 @@ Route::prefix('v1')->group(function () {
             });
         Route::middleware(['auth:sanctum', 'abilities:event-manage'])
             ->group(function () {
-                // Rute statis di dalam manage
-                Route::post('/seats', [EventController::class, 'storeSeats'])->name('event.seats.store');
-                Route::get('/category/{event_id}', [EventController::class, 'getCategory'])->name('event.category');
+                // admin route
+                Route::prefix('admin')->group(function () {
+                    Route::get('/', [EventController::class, 'adminGetEvents'])->name('event.admin.index');
+                    Route::post('/seats', [EventController::class, 'storeSeats'])->name('event.seats.store');
+                    Route::post('/', [EventController::class, 'store'])->name('event.store');
+                    Route::put('/{id}', [EventController::class, 'update'])->name('event.update');
+                    Route::delete('/{id}', [EventController::class, 'destroy'])->name('event.destroy');
+                    Route::put('/category/{id}', [EventController::class, 'updateCategory'])->name('event.category.update');
+                    Route::delete('/category/{id}', [EventController::class, 'destroyCategory'])->name('event.category.destroy');
+                    Route::delete('/seats/{id}', [EventController::class, 'destroySeat'])->name('event.seats.destroy');
+                });
 
-                // Rute dinamis/ID
-                Route::post('/', [EventController::class, 'store'])->name('event.store');
-                Route::put('/{id}', [EventController::class, 'update'])->name('event.update');
-                Route::delete('/{id}', [EventController::class, 'destroy'])->name('event.destroy');
-                Route::put('/category/{id}', [EventController::class, 'updateCategory'])->name('event.category.update');
-                Route::delete('/category/{id}', [EventController::class, 'destroyCategory'])->name('event.category.destroy');
-                Route::delete('/seats/{id}', [EventController::class, 'destroySeat'])->name('event.seats.destroy');
+                Route::get('/category/{event_id}', [EventController::class, 'getCategory'])->name('event.category');
             });
         Route::get('/{slug}', [EventController::class, 'show'])->name('event.show');
     });

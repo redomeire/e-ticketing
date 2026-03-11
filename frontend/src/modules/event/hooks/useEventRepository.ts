@@ -1,5 +1,5 @@
-import { useQuery, UseQueryOptions } from "@tanstack/react-query"
-import eventRepository, { IGetEventDetailRequest, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
+import { useMutation, UseMutationOptions, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query"
+import eventRepository, { IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IGetEventDetailRequest, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
 import { IHttpRequest, IPaginatedData, IHttpResponse } from "@/config/http";
 
 export function useGetEvents(
@@ -33,5 +33,33 @@ export function useGetEventSeats(
         queryKey: ["event-seats", req.payload],
         queryFn: () => eventRepository.getEventSeats(req),
         ...options
+    });
+}
+
+export function useAdminGetEvents(
+    req: IHttpRequest<{}>,
+    options?: Omit<UseQueryOptions<unknown, unknown, IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>, 'queryKey'>
+) {
+    return useQuery({
+        queryKey: ["admin-events", req.options],
+        queryFn: () => eventRepository.adminGetEvents(req),
+        ...options,
+    });
+}
+
+export function useAdminUpdateEvent(
+    req: IHttpRequest<IAdminUpdateEventRequest>,
+    options?: Omit<UseMutationOptions<IHttpResponse<IAdminUpdateEventResponse>, unknown, IAdminUpdateEventRequest>, 'mutationKey'>
+) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: ["admin-update-event", req.payload],
+        mutationFn: (payload: IAdminUpdateEventRequest) => eventRepository.adminUpdateEvent({ payload }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["admin-events"]
+            });
+        },
+        ...options,
     });
 }
