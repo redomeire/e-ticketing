@@ -60,6 +60,16 @@ const getEventSeats = async (
     return response.data;
 }
 
+const getEventCategories = async (
+    params: IHttpRequest<{}>
+): Promise<IHttpResponse<IPaginatedData<IEventCategory>>> => {
+    const response = await api.get(
+        '/event/categories',
+        params.options
+    );
+    return response.data;
+}
+
 type IAdminGetEventsResponse =
     Pick<IEvent, 'id' | 'name' | 'start_time' | 'slug' | 'is_active'>
     & {
@@ -97,6 +107,7 @@ const eventRepository = {
     getEvents,
     getEventDetail,
     getEventSeats,
+    getEventCategories,
     adminGetEvents,
     adminUpdateEvent
 }

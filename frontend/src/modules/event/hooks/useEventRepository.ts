@@ -1,6 +1,7 @@
 import { useMutation, UseMutationOptions, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query"
 import eventRepository, { IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IGetEventDetailRequest, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
 import { IHttpRequest, IPaginatedData, IHttpResponse } from "@/config/http";
+import { IEventCategory } from "../types/event";
 
 export function useGetEvents(
     req: IHttpRequest<{}>,
@@ -33,6 +34,17 @@ export function useGetEventSeats(
         queryKey: ["event-seats", req.payload],
         queryFn: () => eventRepository.getEventSeats(req),
         ...options
+    });
+}
+
+export function useGetEventCategories(
+    req: IHttpRequest<{}>,
+    options?: Omit<UseQueryOptions<unknown, unknown, IHttpResponse<IPaginatedData<IEventCategory>>>, 'queryKey'>
+) {
+    return useQuery({
+        queryKey: ["event-categories", req.options],
+        queryFn: () => eventRepository.getEventCategories(req),
+        ...options,
     });
 }
 

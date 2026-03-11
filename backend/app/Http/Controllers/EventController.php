@@ -364,4 +364,47 @@ class EventController extends Controller
             return $this->sendError('Error retrieving events', ['error' => $e->getMessage()], 500);
         }
     }
+    public function adminStoreEventCategory(Request $request)
+    {
+        try {
+            $validator = Validator::make(
+                $request->all(),
+                [
+                    'name' => 'required|string',
+                ]
+            );
+            if ($validator->fails()) {
+                return $this->sendError('Failed to create event category', [], 402);
+            }
+            $validated = $validator->validated();
+            $event_category = EventCategory::create($validated);
+            return $this->sendResponse($event_category, 'Success creating event category', 201);
+        } catch (\Exception $e) {
+            return $this->sendError('Error creating event category', ['error' => $e->getMessage()], 500);
+        }
+    }
+    public function getEventCategories(Request $request)
+    {
+        try {
+            $validator = Validator::make($request->query(), [
+                'search' => 'nullable|string|max:255',
+                'limit' => 'sometimes|integer|min:1',
+                'page' => 'sometimes|integer|min:1',
+            ]);
+            if ($validator->fails()) {
+                return $this->sendError('Validation Error', $validator->errors(), 422);
+            }
+            $validated = $validator->validated();
+            $query = EventCategory::select('id', 'name');
+            if ($validated['search'] ?? null) {
+                $query->where('name', 'ILIKE', '%' . $validated['search'] . '%');
+            }
+            $categories = $query->paginate($validated['limit'] ?? 10, ['*'], 'page', $validated['page'] ?? 1);
+            return $this->sendResponse($categories, 'Event categories retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->sendError('Failed to retrieve event categories', [
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
 }

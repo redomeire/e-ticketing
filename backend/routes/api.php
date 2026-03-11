@@ -23,6 +23,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('event')->group(function () {
         Route::post('/seats/checkout/webhook', [OrderController::class, 'checkoutWebhook'])->name('event.seats.checkout.webhook');
         Route::get('/', [EventController::class, 'all'])->name('event.all');
+        Route::get('/categories', [EventController::class, 'getEventCategories'])->name('event.categories');
         Route::middleware(['auth:sanctum', CheckUserActive::class])->group(function () {
             Route::prefix('orders')->group(function () {
                 Route::get('/', [OrderController::class, 'all'])->name('event.orders');
@@ -39,6 +40,7 @@ Route::prefix('v1')->group(function () {
                     Route::post('/', [EventController::class, 'store'])->name('event.store');
                     Route::put('/{id}', [EventController::class, 'update'])->name('event.update');
                     Route::delete('/{id}', [EventController::class, 'destroy'])->name('event.destroy');
+                    Route::post('/category', [EventController::class, 'adminStoreEventCategory'])->name('event.category.store');
                     Route::put('/category/{id}', [EventController::class, 'updateCategory'])->name('event.category.update');
                     Route::delete('/category/{id}', [EventController::class, 'destroyCategory'])->name('event.category.destroy');
                     Route::delete('/seats/{id}', [EventController::class, 'destroySeat'])->name('event.seats.destroy');
