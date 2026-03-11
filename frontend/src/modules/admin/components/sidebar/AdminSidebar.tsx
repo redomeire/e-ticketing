@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from "@hugeicons/react"
 import Link from "next/link"
+import { useLogout } from "@/modules/auth/hooks/useAuthRepository"
 
 const data = {
     navMain: [
@@ -29,6 +30,14 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const pathname = usePathname()
+    const { mutateAsync: logout } = useLogout({});
+    const handleSignOut = async () => {
+        try {
+            await logout();
+        } finally {
+            signOut();
+        }
+    }
 
     return (
         <Sidebar collapsible="icon" {...props} className="border-r border-slate-100">
@@ -70,7 +79,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton
-                            onClick={() => signOut()}
+                            onClick={handleSignOut}
                             className="bg-red-600 text-white hover:text-white hover:bg-red-500 transition font-bold uppercase tracking-widest text-[11px] h-12"
                         >
                             <HugeiconsIcon icon={LogOut} size={16} />
