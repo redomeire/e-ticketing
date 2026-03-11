@@ -4,7 +4,7 @@ interface AppUser {
     id: string;
     email: string;
     name: string;
-    isActive: boolean;
+    is_active: boolean;
     role: string;
 }
 

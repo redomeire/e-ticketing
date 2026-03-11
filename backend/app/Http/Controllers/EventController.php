@@ -9,6 +9,7 @@ use App\Models\EventSeat;
 use App\Models\EventTicketCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
@@ -335,6 +336,7 @@ class EventController extends Controller
     }
     public function adminGetEvents(Request $request)
     {
+        Log::info('AdminGetEvents called with query: ' . json_encode($request->query()));
         try {
             $validater = Validator::make($request->query(), [
                 'search' => 'nullable|string|max:255',

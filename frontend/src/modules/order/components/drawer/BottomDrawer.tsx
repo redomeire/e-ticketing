@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
-import { IEvent } from "../../types/event";
+import { IEvent } from "@/modules/event/types/event";
 import { useRouter } from "next/navigation";
 
 interface Props {

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OrderController;
+use App\Http\Middleware\CheckUserActive;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -17,21 +18,21 @@ Route::prefix('v1')->group(function () {
                 Route::post('login', [AuthController::class, 'login'])->name('login');
             });
     });
+
     Route::prefix('event')->group(function () {
         Route::post('/seats/checkout/webhook', [OrderController::class, 'checkoutWebhook'])->name('event.seats.checkout.webhook');
         Route::get('/', [EventController::class, 'all'])->name('event.all');
-        Route::middleware(['auth:sanctum', 'abilities:event-view'])
-            ->group(function () {
-                Route::get('/orders', [OrderController::class, 'all'])->name('event.orders');
-                Route::get('/orders/{id}', [OrderController::class, 'show'])->name('event.orders.show');
-                Route::get('/attendee', [EventController::class, 'getAttendees'])->name('event.attendees');
-                Route::get('/{event_id}/seats', [EventController::class, 'getSeats'])->name('event.seats');
-                Route::post('/seats/checkout', [OrderController::class, 'checkout'])->name('event.seats.checkout');
+        Route::middleware(['auth:sanctum', CheckUserActive::class])->group(function () {
+            Route::prefix('orders')->group(function () {
+                Route::get('/', [OrderController::class, 'all'])->name('event.orders');
+                Route::get('/{id}', [OrderController::class, 'show'])->name('event.orders.show');
             });
-        Route::middleware(['auth:sanctum', 'abilities:event-manage'])
-            ->group(function () {
-                // admin route
-                Route::prefix('admin')->group(function () {
+            Route::get('/attendee', [EventController::class, 'getAttendees'])->name('event.attendees');
+            Route::get('/{event_id}/seats', [EventController::class, 'getSeats'])->name('event.seats');
+            Route::post('/seats/checkout', [OrderController::class, 'checkout'])->name('event.seats.checkout');
+
+            Route::prefix('admin')->group(function () {
+                Route::middleware(['abilities:event-manage'])->group(function () {
                     Route::get('/', [EventController::class, 'adminGetEvents'])->name('event.admin.index');
                     Route::post('/seats', [EventController::class, 'storeSeats'])->name('event.seats.store');
                     Route::post('/', [EventController::class, 'store'])->name('event.store');
@@ -40,10 +41,10 @@ Route::prefix('v1')->group(function () {
                     Route::put('/category/{id}', [EventController::class, 'updateCategory'])->name('event.category.update');
                     Route::delete('/category/{id}', [EventController::class, 'destroyCategory'])->name('event.category.destroy');
                     Route::delete('/seats/{id}', [EventController::class, 'destroySeat'])->name('event.seats.destroy');
+                    Route::get('/category/{event_id}', [EventController::class, 'getCategory'])->name('event.category');
                 });
-
-                Route::get('/category/{event_id}', [EventController::class, 'getCategory'])->name('event.category');
             });
+        });
         Route::get('/{slug}', [EventController::class, 'show'])->name('event.show');
     });
 });
