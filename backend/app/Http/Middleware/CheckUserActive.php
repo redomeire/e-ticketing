@@ -18,8 +18,9 @@ class CheckUserActive
         $user = $request->user();
         if ($user && !$user->is_active) {
             return response()->json([
-                'error' => 'Your account is inactive. Please contact support.'
-            ], status: 403);
+                'success' => false,
+                'message' => 'Your account is inactive. Please contact support.',
+            ], 403);
         }
         return $next($request);
     }

@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckUserActive;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +43,8 @@ Route::prefix('v1')->group(function () {
                     Route::delete('/category/{id}', [EventController::class, 'destroyCategory'])->name('event.category.destroy');
                     Route::delete('/seats/{id}', [EventController::class, 'destroySeat'])->name('event.seats.destroy');
                     Route::get('/category/{event_id}', [EventController::class, 'getCategory'])->name('event.category');
+                    Route::get('/users', [UserController::class, 'index'])->name('event.users');
+                    Route::patch('/users/{id}', [UserController::class, 'update'])->name('event.users.patch');
                 });
             });
         });
