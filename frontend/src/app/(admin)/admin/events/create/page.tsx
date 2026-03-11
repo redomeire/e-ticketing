@@ -17,11 +17,19 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
-const AUTO_COLORS = [
-    "bg-blue-600 text-white", "bg-emerald-600 text-white", "bg-amber-500 text-white",
-    "bg-purple-600 text-white", "bg-rose-600 text-white", "bg-cyan-600 text-white",
-    "bg-orange-500 text-white", "bg-indigo-600 text-white",
-];
+const generateColor = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const h = Math.abs(hash) % 360;
+    return {
+        bg: `hsl(${h}, 70%, 95%)`,
+        text: `hsl(${h}, 70%, 30%)`,
+        border: `hsl(${h}, 70%, 85%)`,
+        selected: `hsl(${h}, 70%, 45%)`
+    };
+};
 
 export default function Page() {
     const [eventData, setEventData] = useState({
@@ -36,9 +44,10 @@ export default function Page() {
     });
 
     const [categories, setCategories] = useState([
-        { id: "REGULAR", name: "REGULAR", price: 50000, quota: 100, color: AUTO_COLORS[0] },
-        { id: "VIP", name: "VIP", price: 75000, quota: 50, color: AUTO_COLORS[1] }
+        { id: "REGULAR", name: "REGULAR", price: 50000, quota: 100, colors: generateColor("REGULAR") },
+        { id: "VIP", name: "VIP", price: 75000, quota: 50, colors: generateColor("VIP") }
     ]);
+
     const [activeCategoryId, setActiveCategoryId] = useState<string>("REGULAR");
     const [newCat, setNewCat] = useState({ name: "", price: "", quota: "" });
     const [seatData, setSeatData] = useState<Record<string, string>>({});
@@ -58,15 +67,15 @@ export default function Page() {
 
     const handleAddCategory = () => {
         if (!newCat.name || !newCat.price) return;
-        const colorIndex = categories.length % AUTO_COLORS.length;
         const categoryId = newCat.name.toUpperCase().replace(/\s+/g, '-');
+        const categoryName = newCat.name.toUpperCase();
 
         setCategories([...categories, {
             id: categoryId,
-            name: newCat.name.toUpperCase(),
+            name: categoryName,
             price: Number(newCat.price),
             quota: Number(newCat.quota) || 0,
-            color: AUTO_COLORS[colorIndex]
+            colors: generateColor(categoryName)
         }]);
         setNewCat({ name: "", price: "", quota: "" });
     };
@@ -156,18 +165,23 @@ export default function Page() {
                                 <button
                                     key={cat.id}
                                     onClick={() => setActiveCategoryId(cat.id)}
-                                    className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${activeCategoryId === cat.id ? "border-blue-600 bg-blue-50" : "border-transparent bg-slate-50"}`}
+                                    style={{
+                                        backgroundColor: activeCategoryId === cat.id ? cat.colors.bg : 'transparent',
+                                        borderColor: activeCategoryId === cat.id ? cat.colors.selected : 'transparent',
+                                        color: cat.colors.text
+                                    }}
+                                    className={`flex items-center justify-between p-3 rounded-lg border-2 transition-all ${activeCategoryId !== cat.id ? "bg-slate-50 border-transparent" : ""}`}
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className={`w-3 h-3 rounded-full ${cat.color}`} />
+                                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.colors.selected }} />
                                         <span className="text-xs font-bold">{cat.name}</span>
                                     </div>
-                                    <span className="text-[10px] font-medium text-slate-400">Rp {cat.price}</span>
+                                    <span className="text-[10px] font-medium opacity-60">Rp {cat.price.toLocaleString()}</span>
                                 </button>
                             ))}
                             <button
                                 onClick={() => setActiveCategoryId("OFF")}
-                                className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${activeCategoryId === "OFF" ? "border-slate-900 bg-slate-900 text-white" : "bg-slate-50 text-slate-400"}`}
+                                className={`flex items-center gap-3 p-3 rounded-lg border-2 transition-all ${activeCategoryId === "OFF" ? "bg-slate-900 text-white border-slate-900" : "bg-slate-50 text-slate-400 border-transparent"}`}
                             >
                                 <HugeiconsIcon icon={Office} size={16} />
                                 <span className="text-xs font-bold">MODE OFF (LORONG)</span>
@@ -176,12 +190,11 @@ export default function Page() {
                         <div className="pt-4 border-t space-y-3">
                             <Input name="name" placeholder="Nama Baru" className="h-9 text-xs" value={newCat.name} onChange={handleNewCatChange} />
                             <Input name="price" placeholder="Harga" type="number" className="h-9 text-xs" value={newCat.price} onChange={handleNewCatChange} />
-                            <Button onClick={handleAddCategory} className="w-full h-9 text-xs font-bold bg-blue-600">Tambah Kategori</Button>
+                            <Button onClick={handleAddCategory} className="w-full h-9 text-xs font-bold bg-blue-600 hover:bg-blue-700">Tambah Kategori</Button>
                         </div>
                     </CardContent>
                 </Card>
 
-                {/* KANAN: GRID DESIGNER */}
                 <div className="lg:col-span-2 space-y-6">
                     <Card className="border-none shadow-sm rounded-xl overflow-hidden">
                         <CardHeader className="p-6 border-b border-slate-50 flex flex-row items-center justify-between">
@@ -207,7 +220,7 @@ export default function Page() {
                             <div
                                 className="grid gap-2 mx-auto"
                                 style={{
-                                    gridTemplateColumns: `repeat(${eventData.max_column_index}, minmax(40px, 1fr))`,
+                                    gridTemplateColumns: `repeat(${eventData.max_column_index}, minmax(44px, 1fr))`,
                                     width: 'fit-content'
                                 }}
                             >
@@ -225,13 +238,18 @@ export default function Page() {
                                             <button
                                                 key={key}
                                                 onClick={() => handleSeatClick(r, c)}
+                                                style={{
+                                                    backgroundColor: category ? category.colors.bg : isOff ? undefined : 'white',
+                                                    borderColor: category ? category.colors.selected : isOff ? undefined : '#60a5fa', // blue-400
+                                                    color: category ? category.colors.text : undefined
+                                                }}
                                                 className={`
                                                     h-10 w-10 rounded-lg flex items-center justify-center text-[9px] font-black transition-all border
                                                     ${isOff
                                                         ? "bg-slate-200 text-slate-400 border-dashed border-slate-300 opacity-40"
                                                         : category
-                                                            ? `${category.color} border-transparent shadow-sm scale-105`
-                                                            : "bg-white text-slate-300 hover:border-blue-300 border-blue-400"}
+                                                            ? "shadow-sm scale-105"
+                                                            : "text-slate-300 hover:border-blue-300"}
                                                 `}
                                             >
                                                 {label}
@@ -241,7 +259,7 @@ export default function Page() {
                                 })}
                             </div>
                             <div className="mt-8 flex justify-end">
-                                <Button className="bg-[#002558] hover:bg-black h-12 px-10 rounded-xl font-bold gap-2 shadow-lg">
+                                <Button className="bg-[#002558] hover:bg-black h-12 px-10 rounded-xl font-bold gap-2 shadow-lg transition-all active:scale-95">
                                     <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} />
                                     Buat Event
                                 </Button>
