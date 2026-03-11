@@ -1,4 +1,5 @@
 "use client";
+import { QueryStateHandler } from "@/components/query/QueryStateHandler";
 import {
     Pagination,
     PaginationContent,
@@ -28,7 +29,7 @@ function PageContent() {
     const pageQuery = searchParams.get("page") || "1";
     const limitQuery = searchParams.get("limit") || "10";
 
-    const { data: events, isPending } = useGetEvents({
+    const { data: events, isPending, isError, error } = useGetEvents({
         options: {
             params: {
                 page: parseInt(pageQuery, 10),
@@ -76,26 +77,23 @@ function PageContent() {
                         </Select>
                     </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {
-                        isPending && !events ? (
-                            <p className="text-center text-gray-500 col-span-full">
-                                Memuat event...
-                            </p>
-                        ) : events?.data.data && events?.data.data.length > 0 ?
-                            events?.data.data.map((event) => (
-                                <Link key={event.id} href={`/event/${event.slug}`}>
-                                    <EventCard
-                                        event={event}
-                                        ticketCategories={event.ticket_categories}
-                                    />
-                                </Link>
-                            )) : (
-                                <p className="text-center text-gray-500 col-span-full">
-                                    Tidak ada event yang tersedia.
-                                </p>
-                            )}
-                </div>
+                <QueryStateHandler
+                    data={events?.data.data}
+                    isPending={isPending}
+                    isError={isError}
+                    error={error as unknown as Error}
+                >
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                        {events?.data.data.map((event) => (
+                            <Link key={event.id} href={`/event/${event.slug}`}>
+                                <EventCard
+                                    event={event}
+                                    ticketCategories={event.ticket_categories}
+                                />
+                            </Link>
+                        ))}
+                    </div>
+                </QueryStateHandler>
                 <Pagination className="mt-10">
                     <PaginationContent>
                         {

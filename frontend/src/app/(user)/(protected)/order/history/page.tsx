@@ -20,6 +20,7 @@ import Link from "next/link";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { formatDate } from "@/lib/utils/formatDate";
 import { Button } from "@/components/ui/button";
+import { QueryStateHandler } from "@/components/query/QueryStateHandler";
 
 const statusConfig = {
     pending: { label: "Menunggu", color: "text-amber-600", bg: "bg-amber-50", icon: Clock01Icon },
@@ -31,7 +32,7 @@ const statusConfig = {
 function PageContent() {
     const searchParams = useSearchParams();
     const pageQuery = searchParams.get("page") || "1";
-    const { data: orders, isPending } = useGetOrderHistory({
+    const { data: orders, isPending, isError, error } = useGetOrderHistory({
         options: {
             params: {
                 page: pageQuery
@@ -101,14 +102,14 @@ function PageContent() {
                         </div>
                     </aside>
                     <div className="lg:col-span-8 space-y-4">
-                        {isPending && !orders ? (
-                            <div className="bg-white rounded-[2rem] border border-gray-100 p-20 flex flex-col items-center justify-center text-center">
-                                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4" />
-                                <p className="font-bold text-[#002558] animate-pulse">Sinkronisasi riwayat...</p>
-                            </div>
-                        ) : orders?.data.data && orders.data.data.length > 0 ? (
+                        <QueryStateHandler
+                            data={orders?.data.data}
+                            isPending={isPending}
+                            isError={isError}
+                            error={error as unknown as Error}
+                        >
                             <>
-                                {orders.data.data.map((order) => {
+                                {orders?.data.data.map((order) => {
                                     const config = statusConfig[order.status as keyof typeof statusConfig];
                                     return (
                                         <div key={order.id} className="bg-white rounded-[2rem] border shadow-sm p-6 md:p-8 border-blue-200 hover:shadow-xl hover:shadow-blue-900/5 transition-all duration-300">
@@ -174,7 +175,7 @@ function PageContent() {
                                 })}
                                 <div className="pt-8">
                                     {
-                                        orders.data.total !== 1 &&
+                                        orders?.data.total !== 1 &&
                                         <Pagination>
                                             <PaginationContent>
                                                 {orders?.data.links && orders.data.links.length > 0 && orders.data.links.map((link, index) => {
@@ -211,20 +212,7 @@ function PageContent() {
                                     }
                                 </div>
                             </>
-                        ) : (
-                            <div className="bg-white rounded-[2rem] border border-dashed border-gray-200 p-20 text-center">
-                                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                                    <HugeiconsIcon icon={Ticket01Icon} size={40} className="text-gray-200" />
-                                </div>
-                                <h3 className="text-xl font-black text-[#002558] uppercase mb-2">Belum ada pesanan</h3>
-                                <p className="text-gray-400 text-sm max-w-sm mx-auto mb-8 font-medium">
-                                    Jelajahi event seru di halaman utama dan pesan tiketmu sekarang!
-                                </p>
-                                <Link href="/" className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 italic">
-                                    Cari Event Menarik
-                                </Link>
-                            </div>
-                        )}
+                        </QueryStateHandler>
                     </div>
                 </div>
             </div>
