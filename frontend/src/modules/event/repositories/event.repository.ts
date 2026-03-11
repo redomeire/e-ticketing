@@ -86,6 +86,27 @@ const adminGetEvents = async (
     return response.data;
 }
 
+type IAdminCreateEventRequest = Partial<IEvent> & {
+    event_categories?: { name: string }[],
+    ticket_categories: {
+        base_price: number;
+        name: string;
+        quota: number;
+        seats: { row: number; column: number; number: string }[]
+    }[]
+}
+
+const adminCreateEvent = async (
+    params: IHttpRequest<IAdminCreateEventRequest>,
+): Promise<IHttpResponse<{}>> => {
+    const response = await api.post(
+        '/event/admin',
+        params.payload,
+        params.options
+    );
+    return response.data;
+}
+
 type IAdminUpdateEventRequest =
     Pick<IEvent, 'id' | 'description' | 'is_active' | 'cover_image_url'>
 
@@ -94,9 +115,23 @@ type IAdminUpdateEventResponse = IEvent;
 const adminUpdateEvent = async (
     params: IHttpRequest<IAdminUpdateEventRequest>
 ): Promise<IHttpResponse<IAdminUpdateEventResponse>> => {
-    console.log(params);
     const response = await api.put(
         `/event/admin/${params.payload?.id}`,
+        params.payload,
+        params.options
+    );
+    return response.data;
+}
+
+interface IAdminCreateEventCategoryRequest {
+    name: string;
+}
+
+const adminCreateEventCategory = async (
+    params: IHttpRequest<IAdminCreateEventCategoryRequest>,
+): Promise<IHttpResponse<IEventCategory>> => {
+    const response = await api.post(
+        `/event/admin/category`,
         params.payload,
         params.options
     );
@@ -109,7 +144,9 @@ const eventRepository = {
     getEventSeats,
     getEventCategories,
     adminGetEvents,
-    adminUpdateEvent
+    adminUpdateEvent,
+    adminCreateEventCategory,
+    adminCreateEvent
 }
 
 export type {
@@ -120,7 +157,9 @@ export type {
     IGetEventSeatsResponse,
     IAdminGetEventsResponse,
     IAdminUpdateEventRequest,
-    IAdminUpdateEventResponse
+    IAdminUpdateEventResponse,
+    IAdminCreateEventCategoryRequest,
+    IAdminCreateEventRequest
 };
 
 export default eventRepository;

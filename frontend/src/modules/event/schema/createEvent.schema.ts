@@ -9,7 +9,7 @@ const seatSchema = z.object({
 const ticketCategorySchema = z.object({
     name: z.string().min(1, "Nama kategori wajib diisi"),
     base_price: z.string().min(1, "Harga dasar wajib diisi"),
-    quota: z.number().min(1, "Kuota minimal 1"),
+    quota: z.coerce.number<number>().min(1, "Kuota minimal 1"),
     seats: z.array(seatSchema).min(1, "Minimal pilih 1 kursi"),
 });
 
@@ -24,8 +24,8 @@ const baseEventSchema = z.object({
     start_time: z.string().min(1, "Waktu mulai wajib diisi"),
     end_time: z.string().min(1, "Waktu selesai wajib diisi"),
     location: z.string().min(1, "Lokasi wajib diisi"),
-    max_row_index: z.number().min(1, "Minimal 1 baris"),
-    max_column_index: z.number().min(1, "Minimal 1 kolom"),
+    max_row_index: z.coerce.number<number>().min(1, "Minimal 1 baris"),
+    max_column_index: z.coerce.number<number>().min(1, "Minimal 1 kolom"),
     ticket_categories: z.array(ticketCategorySchema).min(1),
     event_categories: z.array(eventCategorySchema).optional(),
 });

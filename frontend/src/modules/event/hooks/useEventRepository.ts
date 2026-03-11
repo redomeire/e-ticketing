@@ -1,5 +1,5 @@
 import { useMutation, UseMutationOptions, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query"
-import eventRepository, { IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IGetEventDetailRequest, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
+import eventRepository, { IAdminCreateEventCategoryRequest, IAdminCreateEventRequest, IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IGetEventDetailRequest, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
 import { IHttpRequest, IPaginatedData, IHttpResponse } from "@/config/http";
 import { IEventCategory } from "../types/event";
 
@@ -59,6 +59,23 @@ export function useAdminGetEvents(
     });
 }
 
+export function useAdminCreateEvent(
+    req: IHttpRequest<IAdminCreateEventRequest>,
+    options?: Omit<UseMutationOptions<IHttpResponse<{}>, unknown, IAdminCreateEventRequest>, 'mutationKey'>
+) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: ["admin-create-event", req.payload],
+        mutationFn: (payload: IAdminCreateEventRequest) => eventRepository.adminCreateEvent({ payload }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["admin-events"]
+            });
+        },
+        ...options,
+    });
+}
+
 export function useAdminUpdateEvent(
     req: IHttpRequest<IAdminUpdateEventRequest>,
     options?: Omit<UseMutationOptions<IHttpResponse<IAdminUpdateEventResponse>, unknown, IAdminUpdateEventRequest>, 'mutationKey'>
@@ -71,6 +88,20 @@ export function useAdminUpdateEvent(
             queryClient.invalidateQueries({
                 queryKey: ["admin-events"]
             });
+        },
+        ...options,
+    });
+}
+
+export function useAdminCreateEventCategory(
+    options?: Omit<UseMutationOptions<IHttpResponse<IEventCategory>, unknown, IAdminCreateEventCategoryRequest>, 'mutationKey'>
+) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: IAdminCreateEventCategoryRequest) =>
+            eventRepository.adminCreateEventCategory({ payload }), // Mengirim payload langsung
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["event-categories"] });
         },
         ...options,
     });

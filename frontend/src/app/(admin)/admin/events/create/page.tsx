@@ -22,9 +22,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createEventSchema, CreateEventValues } from "@/modules/event/schema/createEvent.schema";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
-import SearchInput from "@/components/ui/search-input";
+import SearchInputTag from "@/components/ui/search-input-tag";
 import { IEventCategory } from "@/modules/event/types/event";
-import { useGetEventCategories } from "@/modules/event/hooks/useEventRepository";
+import { useAdminCreateEvent, useAdminCreateEventCategory, useGetEventCategories } from "@/modules/event/hooks/useEventRepository";
+import { IAdminCreateEventCategoryRequest } from "@/modules/event/repositories/event.repository";
+import { useRouter } from "next/navigation";
 
 const generateColor = (str: string) => {
     let hash = 0;
@@ -41,6 +43,7 @@ const generateColor = (str: string) => {
 };
 
 export default function CreateEventPage() {
+    const router = useRouter();
     const form = useForm<CreateEventValues>({
         resolver: zodResolver(createEventSchema),
         defaultValues: {
@@ -59,11 +62,11 @@ export default function CreateEventPage() {
             event_categories: [{ name: "Santai" }, { name: "Hiburan" }]
         }
     });
-
     const [categories, setCategories] = useState([
         { id: "REGULAR", name: "REGULAR", price: 50000, quota: 1, colors: generateColor("REGULAR") },
         { id: "VIP", name: "VIP", price: 75000, quota: 1, colors: generateColor("VIP") }
     ]);
+    const { mutateAsync: createEvent, isPending } = useAdminCreateEvent({});
 
     const [activeCategoryId, setActiveCategoryId] = useState<string>("REGULAR");
     const [seatData, setSeatData] = useState<Record<string, string>>({});
@@ -150,8 +153,19 @@ export default function CreateEventPage() {
         return `${String.fromCharCode(64 + r)}${labelIndex}`;
     }
 
-    const onSubmit = (data: CreateEventValues) => {
+    const onSubmit = async (data: CreateEventValues) => {
         console.log("FINAL PAYLOAD SUCCESS:", data);
+        if (typeof data.event_categories === 'undefined') return;
+        const mappedTicketCategories = data.ticket_categories.map((item) => ({
+            ...item, base_price: parseFloat(item.base_price)
+        }))
+        const result = await createEvent({
+            ...data,
+            ticket_categories: mappedTicketCategories
+        });
+        if (result.success) {
+            router.push('/admin/events');
+        }
     };
 
     return (
@@ -200,12 +214,13 @@ export default function CreateEventPage() {
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Kategori</Label>
-                                <SearchInput<IEventCategory>
+                                <SearchInputTag<IEventCategory, IAdminCreateEventCategoryRequest>
                                     name="event_categories"
                                     placeholder="Cari kategori..."
                                     getDisplayValue={(item) => item.name}
                                     getValue={(item) => item.id}
                                     useQueryHook={useGetEventCategories}
+                                    useMutationHook={useAdminCreateEventCategory}
                                 />
                             </div>
                         </CardContent>
@@ -333,7 +348,10 @@ export default function CreateEventPage() {
                                 </div>
 
                                 <div className="mt-12 flex justify-end">
-                                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700 h-14 px-12 rounded-2xl font-black text-white gap-3 shadow-xl transition-all active:scale-95 text-base uppercase tracking-wider">
+                                    <Button
+                                        isLoading={isPending}
+                                        type="submit"
+                                        className="bg-blue-600 hover:bg-blue-700 h-14 px-12 rounded-2xl font-black text-white gap-3 shadow-xl transition-all active:scale-95 text-base uppercase tracking-wider">
                                         <HugeiconsIcon icon={CheckmarkCircle02Icon} size={24} />
                                         Terbitkan Event
                                     </Button>
