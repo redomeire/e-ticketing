@@ -53,7 +53,7 @@ export function useAdminGetEvents(
     options?: Omit<UseQueryOptions<unknown, unknown, IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>, 'queryKey'>
 ) {
     return useQuery({
-        queryKey: ["admin-events", req.options],
+        queryKey: ["admin-events"],
         queryFn: () => eventRepository.adminGetEvents(req),
         ...options,
     });
@@ -84,7 +84,36 @@ export function useAdminUpdateEvent(
     return useMutation({
         mutationKey: ["admin-update-event", req.payload],
         mutationFn: (payload: IAdminUpdateEventRequest) => eventRepository.adminUpdateEvent({ payload }),
-        onSuccess: () => {
+        onMutate: async (newPayload: IAdminUpdateEventRequest) => {
+            await queryClient.cancelQueries({ queryKey: ["admin-events"] });
+            console.log("Updating event with payload:", newPayload);
+
+            const previous = queryClient.getQueryData<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>(["admin-events"]);
+
+            queryClient.setQueryData<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>(['admin-events'], (old) => {
+                console.log(old)
+                if (!old) return old;
+                const updatedEvents = old.data.data.map(event =>
+                    event.id === newPayload.id
+                        ? { ...event, is_active: newPayload.is_active }
+                        : event
+                );
+                const returned = {
+                    ...old,
+                    data: {
+                        ...old.data,
+                        data: updatedEvents,
+                    }
+                };
+                return returned as IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>;
+            });
+
+            return { previous };
+        },
+        onError: (err, newPayload, context) => {
+            queryClient.setQueryData(["admin-events"], context);
+        },
+        onSettled: () => {
             queryClient.invalidateQueries({
                 queryKey: ["admin-events"]
             });
