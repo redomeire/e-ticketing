@@ -8,8 +8,8 @@ interface IEvent {
     start_time: string;
     end_time: string;
     location: string;
-    max_row_index: number;
-    max_column_index: number;
+    max_row: number;
+    max_column: number;
     is_active: boolean;
 }
 

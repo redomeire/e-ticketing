@@ -30,7 +30,7 @@ Route::prefix('v1')->group(function () {
                 Route::get('/{id}', [OrderController::class, 'show'])->name('event.orders.show');
             });
             Route::get('/attendee', [EventController::class, 'getAttendees'])->name('event.attendees');
-            Route::get('/{event_id}/seats', [EventController::class, 'getSeats'])->name('event.seats');
+            Route::get('/{slug}/seats', [EventController::class, 'getSeats'])->name('event.seats');
             Route::post('/seats/checkout', [OrderController::class, 'checkout'])->name('event.seats.checkout');
 
             Route::prefix('admin')->group(function () {
@@ -41,7 +41,7 @@ Route::prefix('v1')->group(function () {
                     Route::put('/{id}', [EventController::class, 'update'])->name('event.update');
                     Route::delete('/{id}', [EventController::class, 'destroy'])->name('event.destroy');
                     Route::post('/category', [EventController::class, 'adminStoreEventCategory'])->name('event.category.store');
-                    Route::put('/category/{id}', [EventController::class, 'updateCategory'])->name('event.category.update');
+                    Route::put('/category/{id}', [EventController::class, 'updateTicketCategory'])->name('event.category.update');
                     Route::delete('/category/{id}', [EventController::class, 'destroyCategory'])->name('event.category.destroy');
                     Route::delete('/seats/{id}', [EventController::class, 'destroySeat'])->name('event.seats.destroy');
                     Route::get('/category/{event_id}', [EventController::class, 'getCategory'])->name('event.category');

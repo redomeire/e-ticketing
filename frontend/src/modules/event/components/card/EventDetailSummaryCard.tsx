@@ -16,7 +16,7 @@ interface Props {
 export default function EventDetailSummaryCard({ event, priceStartFrom }: Props) {
     const router = useRouter();
     const handleBuyTicket = () => {
-        router.push(`/event/${event.id}/order`);
+        router.push(`/event/${event.slug}/order`);
     }
     return (
         <div className="relative md:block hidden">

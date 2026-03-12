@@ -12,7 +12,7 @@ interface Props {
 export default function BottomDrawer({ event, priceStartFrom }: Props) {
     const router = useRouter();
     const handleBuyTicket = () => {
-        router.push(`/event/${event.id}/order`);
+        router.push(`/event/${event.slug}/order`);
     }
     return (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 p-4 z-50 flex items-center justify-between shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">

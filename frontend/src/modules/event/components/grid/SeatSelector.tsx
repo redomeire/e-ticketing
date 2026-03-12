@@ -27,8 +27,8 @@ export default function SeatSelector({ selectedSeatIds, onSeatClick, slug }: Sea
             seats={seats?.data.seats}
             selectedSeats={selectedSeatIds}
             onSeatClick={onSeatClick}
-            maxRowIndex={seats.data.max_row_index}
-            maxColumnIndex={seats.data.max_column_index}
+            maxRowIndex={seats.data.max_row}
+            maxColumnIndex={seats.data.max_column}
         />
     );
 }

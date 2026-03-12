@@ -7,7 +7,7 @@ import {
     IEventTicketCategory
 } from "../types/event";
 
-type IGetEventsResponse = Omit<IEvent, 'description' | 'terms_and_conditions' | 'max_row_index' | 'max_column_index'> & {
+type IGetEventsResponse = Omit<IEvent, 'description' | 'terms_and_conditions' | 'max_row' | 'max_column'> & {
     ticket_categories: IEventTicketCategory[];
 };
 
@@ -26,7 +26,7 @@ interface IGetEventDetailRequest {
 }
 
 type IGetEventDetailResponse = IEvent & {
-    ticket_categories: (IEventTicketCategory & { available_tickets_count: number })[];
+    ticket_categories: ((IEventTicketCategory & { seats: IEventSeat[] }) & { available_tickets_count: number })[];
     categories: IEventCategory[];
 }
 
@@ -45,8 +45,8 @@ interface IGetEventSeatsRequest {
 }
 
 type IGetEventSeatsResponse = {
-    max_row_index: number;
-    max_column_index: number;
+    max_row: number;
+    max_column: number;
     seats: (IEventSeat & { base_price: string, category_name: string })[];
 }
 
@@ -107,8 +107,12 @@ const adminCreateEvent = async (
     return response.data;
 }
 
-type IAdminUpdateEventRequest =
-    Pick<IEvent, 'id' | 'description' | 'is_active' | 'cover_image_url'>
+type IAdminUpdateEventRequest = (Partial<IEvent> & {
+    event_categories?: { name: string }[],
+    ticket_categories?: (Partial<IEventTicketCategory> & {
+        seats?: { row: number; column: number; number: string }[]
+    })[]
+})
 
 type IAdminUpdateEventResponse = IEvent;
 

@@ -1,5 +1,5 @@
 import { useMutation, UseMutationOptions, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query"
-import eventRepository, { IAdminCreateEventCategoryRequest, IAdminCreateEventRequest, IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IGetEventDetailRequest, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
+import eventRepository, { IAdminCreateEventCategoryRequest, IAdminCreateEventRequest, IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IGetEventDetailRequest, IGetEventDetailResponse, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
 import { IHttpRequest, IPaginatedData, IHttpResponse } from "@/config/http";
 import { IEventCategory } from "../types/event";
 
@@ -16,10 +16,10 @@ export function useGetEvents(
 
 export function useGetEventDetail(
     req: IHttpRequest<IGetEventDetailRequest>,
-    options?: UseQueryOptions
+    options?: Omit<UseQueryOptions<unknown, unknown, IHttpResponse<IGetEventDetailResponse>>, 'queryKey'>
 ) {
     return useQuery({
-        queryKey: ["event", req.payload],
+        queryKey: ["event", { slug: req.payload?.slug }],
         queryFn: () => eventRepository.getEventDetail(req),
         ...options
     });
@@ -88,6 +88,9 @@ export function useAdminUpdateEvent(
             queryClient.invalidateQueries({
                 queryKey: ["admin-events"]
             });
+            queryClient.invalidateQueries({
+                queryKey: ["event", { slug: req.payload?.slug }]
+            })
         },
         ...options,
     });

@@ -10,7 +10,7 @@ import { formatCurrency } from '@/lib/utils/formatCurrency';
 import { formatDate } from '@/lib/utils/formatDate';
 
 interface EventCardProps {
-    event: Omit<IEvent, 'max_row_index' | 'max_column_index'>
+    event: Omit<IEvent, 'max_row' | 'max_column'>
     ticketCategories: IEventTicketCategory[];
 }
 

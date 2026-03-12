@@ -24,8 +24,8 @@ const baseEventSchema = z.object({
     start_time: z.string().min(1, "Waktu mulai wajib diisi"),
     end_time: z.string().min(1, "Waktu selesai wajib diisi"),
     location: z.string().min(1, "Lokasi wajib diisi"),
-    max_row_index: z.coerce.number<number>().min(1, "Minimal 1 baris"),
-    max_column_index: z.coerce.number<number>().min(1, "Minimal 1 kolom"),
+    max_row: z.coerce.number<number>().min(1, "Minimal 1 baris"),
+    max_column: z.coerce.number<number>().min(1, "Minimal 1 kolom"),
     ticket_categories: z.array(ticketCategorySchema).min(1),
     event_categories: z.array(eventCategorySchema).optional(),
 });

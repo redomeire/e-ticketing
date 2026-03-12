@@ -21,8 +21,8 @@ return new class extends Migration {
             $table->dateTime('start_time');
             $table->dateTime('end_time');
             $table->string('location');
-            $table->integer('max_row_index');
-            $table->integer('max_column_index');
+            $table->integer('max_row');
+            $table->integer('max_column');
             $table->boolean('is_active')->default(false);
             $table->timestamps();
         });

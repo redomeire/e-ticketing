@@ -14,7 +14,7 @@ import {
     CheckmarkCircle02Icon,
     InformationCircleIcon,
     Office,
-    DeleteIcon,
+    Delete02Icon as DeleteIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import FormProviderWrapper from "@/components/provider/FormProviderWrapper";
@@ -27,6 +27,19 @@ import { IEventCategory } from "@/modules/event/types/event";
 import { useAdminCreateEvent, useAdminCreateEventCategory, useGetEventCategories } from "@/modules/event/hooks/useEventRepository";
 import { IAdminCreateEventCategoryRequest } from "@/modules/event/repositories/event.repository";
 import { useRouter } from "next/navigation";
+
+interface ICategoryState {
+    id: string;
+    name: string;
+    price: number;
+    quota: number;
+    colors: {
+        bg: string;
+        text: string;
+        border: string;
+        selected: string;
+    };
+}
 
 const generateColor = (str: string) => {
     let hash = 0;
@@ -53,24 +66,26 @@ export default function CreateEventPage() {
             start_time: "2026-03-12T15:25",
             end_time: "2026-03-15T17:00",
             location: "SCBD",
-            max_row_index: 10,
-            max_column_index: 10,
-            ticket_categories: [
-                { name: "REGULAR", base_price: "50000", quota: 1, seats: [] },
-                { name: "VIP", base_price: "75000", quota: 1, seats: [] }
-            ],
-            event_categories: [{ name: "Santai" }, { name: "Hiburan" }]
+            max_row: 10,
+            max_column: 10,
+            ticket_categories: [],
         }
     });
-    const [categories, setCategories] = useState([
+
+    const [categories, setCategories] = useState<ICategoryState[]>([
         { id: "REGULAR", name: "REGULAR", price: 50000, quota: 1, colors: generateColor("REGULAR") },
         { id: "VIP", name: "VIP", price: 75000, quota: 1, colors: generateColor("VIP") }
     ]);
+
     const { mutateAsync: createEvent, isPending } = useAdminCreateEvent({});
 
     const [activeCategoryId, setActiveCategoryId] = useState<string>("REGULAR");
     const [seatData, setSeatData] = useState<Record<string, string>>({});
     const [newCat, setNewCat] = useState({ name: "", price: "", quota: "" });
+
+    const getStaticLabel = (r: number, c: number) => {
+        return `${String.fromCharCode(64 + r)}${c}`;
+    };
 
     useEffect(() => {
         const updatedTicketCats = categories.map(cat => ({
@@ -81,12 +96,11 @@ export default function CreateEventPage() {
                 .filter(([, catId]) => catId === cat.id)
                 .map(([key]) => {
                     const [r, c] = key.split("-").map(Number);
-                    return { row: r, column: c, number: getSeatLabel(r, c, seatData) };
+                    return { row: r, column: c, number: getStaticLabel(r, c) };
                 })
         }));
         form.setValue("ticket_categories", updatedTicketCats, { shouldValidate: true });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [seatData, categories]);
+    }, [seatData, categories, form]);
 
     const handleNewCatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -110,21 +124,16 @@ export default function CreateEventPage() {
 
     const handleDeleteCategory = (id: string) => {
         if (categories.length <= 1) return;
-
         const updatedCategories = categories.filter(cat => cat.id !== id);
         setCategories(updatedCategories);
 
         const updatedSeatData = { ...seatData };
         Object.keys(updatedSeatData).forEach(key => {
-            if (updatedSeatData[key] === id) {
-                delete updatedSeatData[key];
-            }
+            if (updatedSeatData[key] === id) delete updatedSeatData[key];
         });
         setSeatData(updatedSeatData);
 
-        if (activeCategoryId === id) {
-            setActiveCategoryId(updatedCategories[0]?.id || "OFF");
-        }
+        if (activeCategoryId === id) setActiveCategoryId(updatedCategories[0]?.id || "OFF");
     };
 
     const handleSeatClick = (r: number, c: number) => {
@@ -140,33 +149,20 @@ export default function CreateEventPage() {
         });
     };
 
-    function getSeatLabel(r: number, c: number, currentSeats: Record<string, string>) {
-        if (currentSeats[`${r}-${c}`] === "OFF") return "OFF";
-
-        let labelIndex = 0;
-        for (let i = 1; i <= c; i++) {
-            const seatStatus = currentSeats[`${r}-${i}`];
-            if (seatStatus !== "OFF") {
-                labelIndex++;
-            }
-        }
-        return `${String.fromCharCode(64 + r)}${labelIndex}`;
-    }
-
     const onSubmit = async (data: CreateEventValues) => {
-        console.log("FINAL PAYLOAD SUCCESS:", data);
         if (typeof data.event_categories === 'undefined') return;
         const mappedTicketCategories = data.ticket_categories.map((item) => ({
             ...item, base_price: parseFloat(item.base_price)
-        }))
+        }));
         const result = await createEvent({
             ...data,
             ticket_categories: mappedTicketCategories
         });
-        if (result.success) {
-            router.push('/admin/events');
-        }
+        if (result.success) router.push('/admin/events');
     };
+
+    const watchRows = Number(form.watch("max_row") || 0);
+    const watchCols = Number(form.watch("max_column") || 0);
 
     return (
         <FormProviderWrapper form={form}>
@@ -200,17 +196,11 @@ export default function CreateEventPage() {
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Deskripsi</Label>
-                                <Textarea
-                                    name="description"
-                                    placeholder="Ceritakan detail event Anda..." className="min-h-30 rounded-2xl border-slate-200"
-                                />
+                                <Textarea name="description" placeholder="Ceritakan detail event Anda..." className="min-h-30 rounded-2xl border-slate-200" />
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Syarat & Ketentuan</Label>
-                                <Textarea
-                                    name="terms_and_conditions"
-                                    placeholder="Apa syarat dan ketentuan mengikuti event ini" className="min-h-30 rounded-2xl border-slate-200"
-                                />
+                                <Textarea name="terms_and_conditions" placeholder="Apa syarat dan ketentuan mengikuti event ini" className="min-h-30 rounded-2xl border-slate-200" />
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Kategori</Label>
@@ -228,7 +218,6 @@ export default function CreateEventPage() {
                 </div>
 
                 <div className="grid lg:grid-cols-3 gap-8 items-start">
-                    {/* LEFT: Category Selection */}
                     <Card className="lg:col-span-1 border-none shadow-sm rounded-[2rem] bg-white p-8">
                         <div className="flex items-center gap-2 text-[#002558] mb-8">
                             <HugeiconsIcon icon={Ticket01Icon} size={20} />
@@ -236,7 +225,6 @@ export default function CreateEventPage() {
                         </div>
 
                         <div className="flex flex-col gap-3">
-                            {/* Bagian Loop Kategori */}
                             {categories.map((cat) => (
                                 <div key={cat.id} className="relative group">
                                     <button
@@ -253,19 +241,13 @@ export default function CreateEventPage() {
                                             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.colors.selected }} />
                                             <span className="text-sm font-black">{cat.name}</span>
                                         </div>
-                                        {/* Tampilkan harga hanya jika tidak sedang hover (untuk memberi ruang tombol delete) */}
                                         <span className="text-[11px] font-bold opacity-60 group-hover:opacity-0 transition-opacity">
                                             Rp {formatCurrency(cat.price)}
                                         </span>
                                     </button>
-
-                                    {/* Tombol Hapus (Muncul saat hover kartu) */}
                                     <button
                                         type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation(); // Mencegah trigger klik kategori
-                                            handleDeleteCategory(cat.id);
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat.id); }}
                                         className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition-all"
                                     >
                                         <HugeiconsIcon icon={DeleteIcon} size={18} />
@@ -284,13 +266,12 @@ export default function CreateEventPage() {
 
                         <div className="pt-8 mt-8 border-t border-slate-50 space-y-4">
                             <Label className="text-xs font-black text-slate-400 uppercase tracking-widest">Tambah Kategori Baru</Label>
-                            <Input name="name" placeholder="Nama Kategori..." className="h-11 rounded-xl" value={newCat.name} onChange={handleNewCatChange} />
-                            <Input name="price" type="number" placeholder="Harga Tiket..." className="h-11 rounded-xl" value={newCat.price} onChange={handleNewCatChange} />
+                            <Input name="name_new" placeholder="Nama Kategori..." className="h-11 rounded-xl" value={newCat.name} onChange={(e) => setNewCat({ ...newCat, name: e.target.value })} />
+                            <Input name="price_new" type="number" placeholder="Harga Tiket..." className="h-11 rounded-xl" value={newCat.price} onChange={(e) => setNewCat({ ...newCat, price: e.target.value })} />
                             <Button type="button" onClick={handleAddCategory} className="w-full bg-blue-600 hover:bg-blue-700 h-11 rounded-xl font-bold">Tambah Brush</Button>
                         </div>
                     </Card>
 
-                    {/* RIGHT: Grid Editor */}
                     <div className="lg:col-span-2">
                         <Card className="border-none shadow-sm rounded-[2rem] bg-white overflow-hidden">
                             <CardHeader className="p-8 border-b border-slate-50 flex flex-row items-center justify-between">
@@ -299,12 +280,12 @@ export default function CreateEventPage() {
                                     <CardTitle className="text-lg font-black uppercase tracking-tight">Editor Denah Kursi</CardTitle>
                                 </div>
                                 <div className="flex gap-6">
-                                    <Input name="max_row_index" type="number" label="ROWS" withValidation className="h-10 w-20 text-center font-black rounded-lg" />
-                                    <Input name="max_column_index" type="number" label="COLS" withValidation className="h-10 w-20 text-center font-black rounded-lg" />
+                                    <Input name="max_row" type="number" label="ROWS" withValidation className="h-10 w-20 text-center font-black rounded-lg" />
+                                    <Input name="max_column" type="number" label="COLS" withValidation className="h-10 w-20 text-center font-black rounded-lg" />
                                 </div>
                             </CardHeader>
 
-                            <CardContent className="p-12 bg-slate-50/30">
+                            <CardContent className="p-12 bg-slate-50/30 overflow-auto">
                                 <div className="w-full h-3 bg-slate-200 rounded-full mb-16 relative">
                                     <span className="absolute -top-7 left-1/2 -translate-x-1/2 text-[10px] font-black text-slate-400 uppercase tracking-[0.3em]">Panggung Utama</span>
                                 </div>
@@ -312,19 +293,19 @@ export default function CreateEventPage() {
                                 <div
                                     className="grid gap-2 mx-auto"
                                     style={{
-                                        gridTemplateColumns: `repeat(${form.watch("max_column_index")}, 44px)`,
+                                        gridTemplateColumns: `repeat(${watchCols}, 44px)`,
                                         width: 'fit-content'
                                     }}
                                 >
-                                    {Array.from({ length: Number(form.watch("max_row_index") || 0) }).map((_, rIdx) => {
+                                    {Array.from({ length: watchRows }).map((_, rIdx) => {
                                         const r = rIdx + 1;
-                                        return Array.from({ length: Number(form.watch("max_column_index") || 0) }).map((_, cIdx) => {
+                                        return Array.from({ length: watchCols }).map((_, cIdx) => {
                                             const c = cIdx + 1;
                                             const key = `${r}-${c}`;
                                             const assignedId = seatData[key];
                                             const category = categories.find(cat => cat.id === assignedId);
                                             const isOff = assignedId === "OFF";
-                                            const label = getSeatLabel(r, c, seatData);
+                                            const label = getStaticLabel(r, c);
 
                                             return (
                                                 <button
@@ -338,9 +319,9 @@ export default function CreateEventPage() {
                                                     }}
                                                     className={`h-11 w-11 rounded-xl flex items-center justify-center text-[10px] font-black transition-all border-2
                                                         ${isOff ? "bg-slate-200 border-dashed border-slate-300 opacity-40 scale-90" :
-                                                            category ? "shadow-md scale-105" : "text-slate-300 hover:border-blue-400 hover:text-blue-400"}`}
+                                                            category ? "shadow-md scale-105 border-transparent" : "text-slate-300 hover:border-blue-400"}`}
                                                 >
-                                                    {label}
+                                                    {isOff ? "OFF" : label}
                                                 </button>
                                             );
                                         });
@@ -358,12 +339,6 @@ export default function CreateEventPage() {
                                 </div>
                             </CardContent>
                         </Card>
-                        {/* Debug Info: Hapus saat produksi */}
-                        {Object.keys(form.formState.errors).length > 0 && (
-                            <p className="mt-4 text-rose-600 font-bold text-sm bg-rose-50 p-4 rounded-xl">
-                                Perhatian: Masih ada field yang belum valid. Pastikan setiap kategori memiliki minimal 1 kursi.
-                            </p>
-                        )}
                     </div>
                 </div>
             </form>

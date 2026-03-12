@@ -17,7 +17,6 @@ class EventSeat extends Model
         'seat_number',
         'is_available',
         'locked_until',
-        'price',
         'row_index',
         'column_index',
     ];

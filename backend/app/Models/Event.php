@@ -17,10 +17,11 @@ class Event extends Model
         'start_time',
         'end_time',
         'location',
-        'max_row_index',
-        'max_column_index',
+        'max_row',
+        'max_column',
         'slug',
-        'cover_image_url'
+        'cover_image_url',
+        'terms_and_conditions',
     ];
     public function ticketCategories()
     {
