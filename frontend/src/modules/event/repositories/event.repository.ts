@@ -109,9 +109,6 @@ const adminCreateEvent = async (
 
 type IAdminUpdateEventRequest = (Partial<IEvent> & {
     event_categories?: { name: string }[],
-    ticket_categories?: (Partial<IEventTicketCategory> & {
-        seats?: { row: number; column: number; number: string }[]
-    })[]
 })
 
 type IAdminUpdateEventResponse = IEvent;
@@ -121,6 +118,26 @@ const adminUpdateEvent = async (
 ): Promise<IHttpResponse<IAdminUpdateEventResponse>> => {
     const response = await api.put(
         `/event/admin/${params.payload?.id}`,
+        params.payload,
+        params.options
+    );
+    return response.data;
+}
+
+interface IAdminUpdateSeatsRequest {
+    max_row: number;
+    max_column: number;
+    slug: string;
+    ticket_categories: (Partial<IEventTicketCategory> & {
+        seats?: { row: number; column: number; number: string }[]
+    })[]
+}
+
+const adminUpdateSeats = async (
+    params: IHttpRequest<IAdminUpdateSeatsRequest>
+): Promise<IHttpResponse<{}>> => {
+    const response = await api.put(
+        `/event/admin/${params.payload?.slug}/seats`,
         params.payload,
         params.options
     );
@@ -149,6 +166,7 @@ const eventRepository = {
     getEventCategories,
     adminGetEvents,
     adminUpdateEvent,
+    adminUpdateSeats,
     adminCreateEventCategory,
     adminCreateEvent
 }
@@ -161,6 +179,7 @@ export type {
     IGetEventSeatsResponse,
     IAdminGetEventsResponse,
     IAdminUpdateEventRequest,
+    IAdminUpdateSeatsRequest,
     IAdminUpdateEventResponse,
     IAdminCreateEventCategoryRequest,
     IAdminCreateEventRequest

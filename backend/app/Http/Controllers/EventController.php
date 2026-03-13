@@ -169,47 +169,37 @@ class EventController extends Controller
     }
     public function update(Request $request, $id)
     {
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|string',
+            'is_active' => 'sometimes|required|boolean',
+            'terms_and_conditions' => 'sometimes|string',
+            'start_time' => 'sometimes|required|date',
+            'end_time' => 'sometimes|required|date|after:start_time',
+            'location' => 'sometimes|required|string|max:255',
+            'event_categories' => 'sometimes|array',
+            'event_categories.*.name' => 'required_with:event_categories|string',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->sendError('Validation Error', $validator->errors(), 422);
+        }
+
+        $event = Event::find($id);
+        if (!$event)
+            return $this->sendError('Event not found', [], 404);
+
+        DB::beginTransaction();
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => 'sometimes|required|string|max:255',
-                'description' => 'sometimes|string',
-                'is_active' => 'sometimes|required|boolean',
-                'terms_and_conditions' => 'sometimes|string',
-                'start_time' => 'sometimes|required|date',
-                'end_time' => 'sometimes|required|date|after:start_time',
-                'location' => 'sometimes|required|string|max:255',
-                'max_row' => 'sometimes|required|integer|min:1',
-                'max_column' => 'sometimes|required|integer|min:1',
-                'ticket_categories' => 'sometimes|array|min:1',
-                'ticket_categories.*.name' => 'required_with:ticket_categories|string',
-                'ticket_categories.*.base_price' => 'required_with:ticket_categories|numeric',
-                'ticket_categories.*.quota' => 'required_with:ticket_categories|integer',
-                'ticket_categories.*.seats' => 'required_with:ticket_categories|array',
-                'event_categories' => 'sometimes|array',
-            ]);
-
-            if ($validator->fails()) {
-                return $this->sendError('Validation Error', $validator->errors(), 422);
-            }
-
-            $event = Event::find($id);
-            if (!$event) {
-                return $this->sendError('Event not found', [], 404);
-            }
-
-            DB::beginTransaction();
             $event->update($request->only([
                 'name',
                 'description',
-                'max_row',
-                'max_column',
                 'start_time',
                 'end_time',
                 'location',
                 'terms_and_conditions',
-                'is_active',
+                'is_active'
             ]));
-
             if ($request->has('event_categories')) {
                 $categoryIds = [];
                 $names = collect($request->event_categories)->pluck('name')->unique()->filter();
@@ -218,74 +208,12 @@ class EventController extends Controller
                     $cat = EventCategory::firstOrCreate(['name' => $name]);
                     $categoryIds[] = (int) $cat->id;
                 }
-
                 $event->categories()->sync($categoryIds);
-            }
-            if ($request->has('ticket_categories')) {
-                $activeCategoryIds = [];
-                $activeSeatIds = [];
-
-                $existingSeats = EventSeat::whereHas('ticketCategory', function ($q) use ($event) {
-                    $q->where('event_id', $event->id);
-                })->get()->keyBy(fn($s) => $s->row_index . '-' . $s->column_index);
-
-                foreach ($request->ticket_categories as $catData) {
-                    $category = $event->ticketCategories()->updateOrCreate(
-                        ['name' => $catData['name']],
-                        ['base_price' => $catData['base_price'], 'quota' => $catData['quota']]
-                    );
-                    $activeCategoryIds[] = $category->id;
-
-                    foreach ($catData['seats'] as $seat) {
-                        $rIdx = (int) $seat['row'] - 1;
-                        $cIdx = (int) $seat['column'] - 1;
-                        $coordKey = $rIdx . '-' . $cIdx;
-
-                        if ($rIdx >= $event->max_row || $cIdx >= $event->max_column) {
-                            continue;
-                        }
-
-                        $existingSeat = $existingSeats->get($coordKey);
-
-                        if ($existingSeat) {
-                            $existingSeat->update([
-                                'ticket_category_id' => $category->id,
-                                'seat_number' => $seat['number'],
-                            ]);
-                            $activeSeatIds[] = $existingSeat->id;
-                        } else {
-                            $newSeat = EventSeat::create([
-                                'ticket_category_id' => $category->id,
-                                'row_index' => $rIdx,
-                                'column_index' => $cIdx,
-                                'seat_number' => $seat['number'],
-                                'is_available' => true
-                            ]);
-                            $activeSeatIds[] = $newSeat->id;
-                        }
-                    }
-                }
-
-                $allCurrentCategoryIds = $event->ticketCategories()->pluck('id');
-
-                EventSeat::whereIn('ticket_category_id', $allCurrentCategoryIds)
-                    ->where(function ($query) use ($event) {
-                        $query->where('row_index', '>=', $event->max_row)
-                            ->orWhere('column_index', '>=', $event->max_column);
-                    })->delete();
-
-                EventSeat::whereIn('ticket_category_id', $allCurrentCategoryIds)
-                    ->whereNotIn('id', $activeSeatIds)
-                    ->delete();
-
-                $event->ticketCategories()->whereNotIn('id', $activeCategoryIds)->delete();
             }
 
             DB::commit();
-            return $this->sendResponse(
-                $event->load(['ticketCategories.seats', 'categories']),
-                'Event updated successfully'
-            );
+
+            return $this->sendResponse($event->load('categories'), 'Event metadata updated successfully');
         } catch (\Exception $e) {
             DB::rollBack();
             return $this->sendError('Update Failed', ['error' => $e->getMessage()], 500);
@@ -361,14 +289,31 @@ class EventController extends Controller
     {
         try {
             $event = Event::where('slug', $slug)->first();
+            if (!$event)
+                return $this->sendError('Event not found', [], 404);
+
+            // Disarankan: Gunakan Cache::remember jika load-nya tinggi, tapi pastikan di-forget di updateSeats
             $seats = DB::table('event_seats as e')
                 ->join('event_ticket_categories as tc', 'e.ticket_category_id', '=', 'tc.id')
                 ->where('tc.event_id', $event->id)
-                ->select('e.id', 'e.row_index', 'e.column_index', 'e.seat_number', 'e.is_available', 'e.locked_until', 'tc.name as category_name', 'tc.base_price')
+                ->where('e.deleted_at', null)
+                ->select(
+                    'e.id',
+                    'e.row_index',
+                    'e.column_index',
+                    'e.seat_number',
+                    'e.is_available',
+                    'e.locked_until',
+                    'tc.name as category_name',
+                    'tc.base_price'
+                )
+                ->orderBy('e.row_index')
+                ->orderBy('e.column_index')
                 ->get();
+
             return $this->sendResponse([
-                'max_row' => $event->max_row,
-                'max_column' => $event->max_column,
+                'max_row' => (int) $event->max_row,
+                'max_column' => (int) $event->max_column,
                 'seats' => $seats,
             ], 'Seats retrieved successfully');
         } catch (\Exception $e) {
@@ -419,6 +364,133 @@ class EventController extends Controller
             return $this->sendError('Failed to assign seats', [
                 'error' => $e->getMessage(),
             ], 500);
+        }
+    }
+
+    public function updateSeats(Request $request, $slug)
+    {
+        $validator = Validator::make($request->all(), [
+            'max_row' => 'required|integer|min:1',
+            'max_column' => 'required|integer|min:1',
+            'ticket_categories' => 'required|array|min:1',
+            'ticket_categories.*.name' => 'required|string',
+            'ticket_categories.*.base_price' => 'required|numeric',
+            'ticket_categories.*.quota' => 'required|integer',
+            'ticket_categories.*.seats' => 'required|array',
+            'ticket_categories.*.seats.*.row' => 'required|integer',
+            'ticket_categories.*.seats.*.column' => 'required|integer',
+            'ticket_categories.*.seats.*.number' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            Log::error("Validation Error: ", $validator->errors()->toArray());
+            return $this->sendError('Validation Error', $validator->errors(), 422);
+        }
+
+        $event = Event::where('slug', $slug)->first();
+        if (!$event)
+            return $this->sendError('Event not found', [], 404);
+
+        DB::beginTransaction();
+        try {
+            $event->update([
+                'max_row' => (int) $request->max_row,
+                'max_column' => (int) $request->max_column
+            ]);
+
+            $activeCategoryIds = [];
+            $activeSeatIds = [];
+
+            $oldCategoryIds = $event->ticketCategories()->pluck('id')->toArray();
+            Log::info("Old Category IDs in DB: " . implode(',', $oldCategoryIds));
+
+            $existingSeats = EventSeat::whereIn('ticket_category_id', $oldCategoryIds)
+                ->get()
+                ->keyBy(fn($s) => $s->row_index . '-' . $s->column_index);
+
+            foreach ($request->ticket_categories as $catData) {
+                $category = $event->ticketCategories()->updateOrCreate(
+                    ['name' => $catData['name']],
+                    ['base_price' => $catData['base_price'], 'quota' => $catData['quota']]
+                );
+                $activeCategoryIds[] = $category->id;
+
+                foreach ($catData['seats'] as $seat) {
+                    $rIdx = (int) $seat['row'] - 1;
+                    $cIdx = (int) $seat['column'] - 1;
+                    $coordKey = $rIdx . '-' . $cIdx;
+
+                    if ($rIdx >= $event->max_row || $cIdx >= $event->max_column) {
+                        Log::debug("Seat skipped (Out of Bounds): {$coordKey}");
+                        continue;
+                    }
+
+                    $existingSeat = $existingSeats->get($coordKey);
+
+                    if ($existingSeat) {
+
+                        if (!$existingSeat->orderItem()->exists()) {
+                            DB::table('event_seats')
+                                ->where('ticket_category_id', $category->id)
+                                ->where('row_index', $rIdx)
+                                ->where('column_index', $cIdx)
+                                ->where('id', '!=', $existingSeat->id)
+                                ->delete();
+
+                            $existingSeat->update([
+                                'ticket_category_id' => $category->id,
+                                'seat_number' => $seat['number'],
+                            ]);
+                        }
+                        $activeSeatIds[] = $existingSeat->id;
+                    } else {
+                        DB::table('event_seats')
+                            ->whereIn('ticket_category_id', $oldCategoryIds)
+                            ->where('row_index', $rIdx)
+                            ->where('column_index', $cIdx)
+                            ->delete();
+
+                        $newSeat = EventSeat::create([
+                            'ticket_category_id' => $category->id,
+                            'row_index' => $rIdx,
+                            'column_index' => $cIdx,
+                            'seat_number' => $seat['number'],
+                            'is_available' => true
+                        ]);
+                        $activeSeatIds[] = $newSeat->id;
+                    }
+                }
+            }
+
+            $cleanupQuery = EventSeat::whereIn('ticket_category_id', $oldCategoryIds)
+                ->where(function ($query) use ($activeSeatIds, $event) {
+                    $query->whereNotIn('id', $activeSeatIds)
+                        ->orWhere('row_index', '>=', $event->max_row)
+                        ->orWhere('column_index', '>=', $event->max_column);
+                });
+
+            $seatsToDelete = $cleanupQuery->get();
+
+            foreach ($seatsToDelete as $s) {
+                if (!$s->orderItem()->exists()) {
+                    Log::info("DELETING seat ID: {$s->id} at coord: {$s->row_index}-{$s->column_index}");
+                    $s->delete();
+                } else {
+                    Log::warning("CANNOT DELETE seat ID: {$s->id} - Already ordered.");
+                }
+            }
+
+            $event->ticketCategories()->whereNotIn('id', $activeCategoryIds)->delete();
+
+            DB::commit();
+            Log::info("TRANSACTION COMMITTED SUCCESSFULLY.");
+
+            return $this->sendResponse(null, 'Layout updated successfully.');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("TRANSACTION ROLLED BACK. Error: " . $e->getMessage());
+            Log::error("Trace: " . $e->getTraceAsString());
+            return $this->sendError('Update Failed', ['error' => $e->getMessage()], 500);
         }
     }
     public function destroySeat($id)

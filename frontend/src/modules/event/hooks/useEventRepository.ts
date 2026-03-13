@@ -1,5 +1,5 @@
 import { useMutation, UseMutationOptions, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query"
-import eventRepository, { IAdminCreateEventCategoryRequest, IAdminCreateEventRequest, IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IGetEventDetailRequest, IGetEventDetailResponse, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
+import eventRepository, { IAdminCreateEventCategoryRequest, IAdminCreateEventRequest, IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IAdminUpdateSeatsRequest, IGetEventDetailRequest, IGetEventDetailResponse, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
 import { IHttpRequest, IPaginatedData, IHttpResponse } from "@/config/http";
 import { IEventCategory } from "../types/event";
 
@@ -125,13 +125,35 @@ export function useAdminUpdateEvent(
     });
 }
 
+export function useAdminUpdateSeats(
+    req: IHttpRequest<IAdminUpdateSeatsRequest>,
+    options?: Omit<UseMutationOptions<IHttpResponse<{}>, unknown, IAdminUpdateSeatsRequest>, 'mutationKey'>
+) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationKey: ["admin-update-seats"],
+        mutationFn: (payload: IAdminUpdateSeatsRequest) => eventRepository.adminUpdateSeats({ payload }),
+        onSuccess: (data, variables) => {
+            const slug = variables.slug;
+            queryClient.invalidateQueries({
+                queryKey: ["event", { slug }]
+            });
+            queryClient.invalidateQueries({
+                queryKey: ["event-seats", { slug }]
+            });
+        },
+        ...options,
+    });
+}
+
 export function useAdminCreateEventCategory(
     options?: Omit<UseMutationOptions<IHttpResponse<IEventCategory>, unknown, IAdminCreateEventCategoryRequest>, 'mutationKey'>
 ) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn: (payload: IAdminCreateEventCategoryRequest) =>
-            eventRepository.adminCreateEventCategory({ payload }), // Mengirim payload langsung
+            eventRepository.adminCreateEventCategory({ payload }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["event-categories"] });
         },

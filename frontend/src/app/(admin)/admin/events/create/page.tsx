@@ -27,6 +27,7 @@ import { IEventCategory } from "@/modules/event/types/event";
 import { useAdminCreateEvent, useAdminCreateEventCategory, useGetEventCategories } from "@/modules/event/hooks/useEventRepository";
 import { IAdminCreateEventCategoryRequest } from "@/modules/event/repositories/event.repository";
 import { useRouter } from "next/navigation";
+import { generateColor } from "@/modules/event/utils/generateColor";
 
 interface ICategoryState {
     id: string;
@@ -41,19 +42,7 @@ interface ICategoryState {
     };
 }
 
-const generateColor = (str: string) => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const h = Math.abs(hash) % 360;
-    return {
-        bg: `hsl(${h}, 70%, 95%)`,
-        text: `hsl(${h}, 70%, 30%)`,
-        border: `hsl(${h}, 70%, 85%)`,
-        selected: `hsl(${h}, 70%, 45%)`
-    };
-};
+// TODO: Add image upload and preview feature for event thumbnail/banner. This can be done using a simple file input and storing the image in a temporary state before submission. Consider using a library like react-dropzone for a better user experience.
 
 export default function CreateEventPage() {
     const router = useRouter();
@@ -102,11 +91,6 @@ export default function CreateEventPage() {
         form.setValue("ticket_categories", updatedTicketCats, { shouldValidate: true });
     }, [seatData, categories, form]);
 
-    const handleNewCatChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setNewCat(prev => ({ ...prev, [name]: value }));
-    };
-
     const handleAddCategory = () => {
         if (!newCat.name || !newCat.price) return;
         const categoryId = newCat.name.toUpperCase().replace(/\s+/g, '-');
@@ -138,13 +122,17 @@ export default function CreateEventPage() {
 
     const handleSeatClick = (r: number, c: number) => {
         const key = `${r}-${c}`;
+
         setSeatData(prev => {
             const current = prev[key];
-            if (current === activeCategoryId) {
+
+            if (current === activeCategoryId || (activeCategoryId === "OFF" && !current)) {
                 const newState = { ...prev };
                 delete newState[key];
                 return newState;
             }
+            if (activeCategoryId === "OFF") return prev;
+
             return { ...prev, [key]: activeCategoryId };
         });
     };
