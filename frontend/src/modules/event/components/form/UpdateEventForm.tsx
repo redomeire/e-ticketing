@@ -39,18 +39,47 @@ export default function UpdateEventForm({ event }: Props) {
         }
     });
 
-    const { mutateAsync: updateEvent, isPending: isUpdating } = useAdminUpdateEvent({});
+    const {
+        mutateAsync: updateEvent,
+        isPending: isUpdating
+    } = useAdminUpdateEvent({
+        options: {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        }
+    });
 
     const onSubmit = async (data: UpdateEventValues) => {
-        if (!event && !data.event_categories) return;
-        if (!data.event_categories) return;
-        const cleanedEventCategories = data.event_categories.filter(ec => ec.name);
-        const result = await updateEvent({
-            id: event.id,
-            ...data,
-            event_categories: cleanedEventCategories,
-        });
-        if (result.success) router.push('/admin/events');
+        try {
+            const formData = new FormData();
+            formData.append("_method", "PUT");
+            formData.append("id", event.id.toString());
+
+            formData.append("name", data.name);
+            formData.append("description", data.description);
+            formData.append("terms_and_conditions", data.terms_and_conditions);
+            formData.append("start_time", data.start_time);
+            formData.append("end_time", data.end_time);
+            formData.append("location", data.location);
+            formData.append("is_active", event.is_active ? "1" : "0");
+
+            if (data.event_categories) {
+                formData.append("event_categories", JSON.stringify(data.event_categories));
+            }
+
+            if (data.cover_image instanceof File) {
+                formData.append("cover_image", data.cover_image);
+            }
+
+            const result = await updateEvent(formData);
+
+            if (result.success) {
+                router.push('/admin/events');
+            }
+        } catch (error) {
+            console.error("Update failed", error);
+        }
     };
     return (
         <FormProviderWrapper form={form}>

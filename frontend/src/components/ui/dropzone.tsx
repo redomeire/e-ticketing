@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Card } from "./card";
 import { useFormContext } from "react-hook-form";
 import useDragNDrop from "@/hooks/use-drag-and-drop";
@@ -14,7 +14,7 @@ interface Props {
   name?: string;
   withValidation?: boolean;
   withPreview?: boolean;
-  cover_image_url?: string; // Tambahkan properti ini
+  cover_image_url?: string;
   options?: DropzoneProps;
 }
 
@@ -30,17 +30,10 @@ const formatAcceptedFileTypes = (accept: Accept) => {
 };
 
 const DropzoneComponent: React.FC<Props> = (props: Props) => {
-  const useOptionalFormContext = () => {
-    try {
-      return useFormContext();
-    } catch {
-      return null;
-    }
-  };
+  const form = useFormContext();
 
-  const form = useOptionalFormContext();
-  const registration =
-    props.withValidation && form && props.name ? form.register(props.name) : {};
+  // State lokal untuk melacak apakah gambar asli (dari URL) dihapus oleh user
+  const [isOriginalImageDeleted, setIsOriginalImageDeleted] = useState(false);
 
   const onDrop = (acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
@@ -50,6 +43,8 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
 
       form?.setValue(props.name || "", valueToSet, { shouldValidate: true });
       form?.trigger(props.name || "");
+      // Jika user upload file baru, anggap gambar lama sudah tertimpa/dihapus
+      setIsOriginalImageDeleted(false);
     }
   };
 
@@ -66,22 +61,45 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
     ...props.options,
   });
 
+  // Reset state jika form sukses disubmit
   useEffect(() => {
     if (form?.formState.isSubmitSuccessful) {
       clear();
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsOriginalImageDeleted(false);
     }
   }, [clear, form?.formState.isSubmitSuccessful]);
 
-  // Logic Determinator
   const isMultiple = props.options?.multiple !== false;
   const hasFile = files.length > 0;
   const isFirstFileImage = hasFile && files[0].type.startsWith("image/");
 
-  // Kondisi Baru: Tampilkan preview penuh jika (ada file baru tipe gambar) ATAU (ada URL gambar lama & belum ada file baru)
-  const showFullPreview = props.withPreview && !isMultiple && (isFirstFileImage || (!!props.cover_image_url && !hasFile));
+  // Logika preview: tampilkan jika ada file baru ATAU ada URL lama yang belum dihapus
+  const showFullPreview = props.withPreview && !isMultiple &&
+    (isFirstFileImage || (!!props.cover_image_url && !hasFile && !isOriginalImageDeleted));
 
-  // Tentukan URL mana yang ditampilkan
-  const displayImageSrc = hasFile ? previewFile(files[0]) : props.cover_image_url;
+  const displayImageSrc = hasFile ? previewFile(files[0]) : (isOriginalImageDeleted ? null : props.cover_image_url);
+
+  // FUNGSI HAPUS YANG DIPERBAIKI
+  const handleManualDelete = (e: React.MouseEvent, file?: File) => {
+    e.stopPropagation();
+
+    if (props.options?.multiple === false) {
+      // MODE SINGLE
+      clear(); // Hapus dari hook state
+      setIsOriginalImageDeleted(true); // Tandai URL lama dihapus
+      if (props.name) {
+        form.setValue(props.name, null, { shouldValidate: true });
+      }
+    } else if (file) {
+      // MODE MULTIPLE
+      removeFile(file);
+      if (props.name) {
+        const remainingFiles = files.filter((f) => f !== file);
+        form.setValue(props.name, remainingFiles, { shouldValidate: true });
+      }
+    }
+  };
 
   return (
     <Card title="">
@@ -95,20 +113,12 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
               src={displayImageSrc}
               alt="Preview"
               className="object-cover"
-              unoptimized={displayImageSrc.startsWith('http')} // Untuk menghindari error next/image pada URL luar
+              unoptimized={displayImageSrc.startsWith('http')}
             />
-            {/* Overlay untuk tombol hapus/ganti */}
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  clear();
-                  // Jika ini adalah URL dari database, kamu mungkin ingin memberi tahu form bahwa gambar dihapus
-                  if (!hasFile && props.name) {
-                    form?.setValue(props.name, null);
-                  }
-                }}
+                onClick={handleManualDelete}
                 className="p-3 bg-white/20 hover:bg-red-500 backdrop-blur-md rounded-full text-white transition-all transform hover:scale-110"
               >
                 <HugeiconsIcon icon={Trash} size={24} />
@@ -127,7 +137,7 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
           ${showFullPreview && displayImageSrc ? "opacity-0" : "opacity-100"}
         `}
         >
-          <input name={props.name} {...registration} {...getInputProps()} />
+          <input name={props.name} {...getInputProps()} />
 
           <div className="dz-message flex flex-col items-center m-0!">
             <div className="mb-5.5 flex justify-center">
@@ -135,9 +145,7 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
             </div>
 
             <h4 className="mb-3 font-semibold text-gray-800 text-theme-xl dark:text-white/90 text-center">
-              {isDragActive ? (
-                "Drop Files Here"
-              ) : (
+              {isDragActive ? "Drop Files Here" : (
                 <>
                   <span className="text-[#019C98] underline">Click to upload</span> or drag and drop
                 </>
@@ -154,71 +162,43 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
         </div>
       </div>
 
-      {/* List view hanya muncul jika Multiple Mode atau file baru bukan image */}
+      {/* List view untuk Multiple atau File Non-Image */}
       {(isMultiple || (!showFullPreview && hasFile)) && (
         <div className="mt-4">
           <ul className="text-gray-700 dark:text-gray-400 space-y-5 px-5">
             {files.map((file) => {
-              const { fileName, fileSize, fileExtension } = getFileDetail(file, {
-                sizeUnit: "MB",
-              });
-
+              const { fileName, fileSize, fileExtension } = getFileDetail(file, { sizeUnit: "MB" });
               const isImage = file.type.startsWith("image/");
               const showMiniPreview = props.withPreview && isImage;
 
               return (
-                <li
-                  key={file.name}
-                  className="flex items-center justify-between gap-3 p-2 rounded-lg border border-gray-100 dark:border-gray-800"
-                >
+                <li key={file.name} className="flex items-center justify-between gap-3 p-2 rounded-lg border border-gray-100 dark:border-gray-800">
                   <div className="flex items-center gap-4 truncate">
                     <div className="shrink-0 w-12 h-12 relative rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
                       {showMiniPreview ? (
-                        <Image
-                          fill
-                          src={previewFile(file)}
-                          alt={file.name}
-                          className="w-full h-full object-cover"
-                        />
+                        <Image fill src={previewFile(file)} alt={file.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <HugeiconsIcon
-                            icon={isImage ? Image01Icon : Upload}
-                            size={20}
-                            className="text-gray-400"
-                          />
+                          <HugeiconsIcon icon={isImage ? Image01Icon : Upload} size={20} className="text-gray-400" />
                         </div>
                       )}
                     </div>
-
                     <div className="truncate">
                       <p className="flex items-center hover:underline hover:text-[#019C98] transition">
-                        <Link
-                          href={previewFile(file)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="truncate font-medium text-sm text-gray-800 dark:text-white/90"
-                        >
+                        <Link href={previewFile(file)} target="_blank" className="truncate font-medium text-sm text-gray-800 dark:text-white/90">
                           {fileName}
                         </Link>
                         <span className="text-sm">.{fileExtension}</span>
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {fileSize} • Complete
-                      </p>
+                      <p className="text-xs text-gray-500">{fileSize} • Complete</p>
                     </div>
                   </div>
-
                   <button
                     type="button"
-                    onClick={() => removeFile(file)}
+                    onClick={(e) => handleManualDelete(e, file)}
                     className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors group"
                   >
-                    <HugeiconsIcon
-                      icon={Trash}
-                      size={18}
-                      className="text-gray-400 group-hover:text-red-500 transition-colors"
-                    />
+                    <HugeiconsIcon icon={Trash} size={18} className="text-gray-400 group-hover:text-red-500" />
                   </button>
                 </li>
               );

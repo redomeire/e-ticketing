@@ -1,5 +1,5 @@
 import { useMutation, UseMutationOptions, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query"
-import eventRepository, { IAdminCreateEventCategoryRequest, IAdminCreateEventRequest, IAdminGetEventsResponse, IAdminUpdateEventRequest, IAdminUpdateEventResponse, IAdminUpdateSeatsRequest, IGetEventDetailRequest, IGetEventDetailResponse, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
+import eventRepository, { IAdminCreateEventCategoryRequest, IAdminCreateEventRequest, IAdminGetEventsResponse, IAdminUpdateEventResponse, IAdminUpdateSeatsRequest, IGetEventDetailRequest, IGetEventDetailResponse, IGetEventSeatsRequest, IGetEventSeatsResponse, IGetEventsResponse } from "../repositories/event.repository";
 import { IHttpRequest, IPaginatedData, IHttpResponse } from "@/config/http";
 import { IEventCategory } from "../types/event";
 
@@ -77,35 +77,56 @@ export function useAdminCreateEvent(
 }
 
 export function useAdminUpdateEvent(
-    req: IHttpRequest<IAdminUpdateEventRequest>,
-    options?: Omit<UseMutationOptions<IHttpResponse<IAdminUpdateEventResponse>, unknown, IAdminUpdateEventRequest>, 'mutationKey'>
+    req: IHttpRequest<FormData>,
+    options?: Omit<UseMutationOptions<IHttpResponse<IAdminUpdateEventResponse>, unknown, FormData>, 'mutationKey'>
 ) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationKey: ["admin-update-event", req.payload],
-        mutationFn: (payload: IAdminUpdateEventRequest) => eventRepository.adminUpdateEvent({ payload }),
-        onMutate: async (newPayload: IAdminUpdateEventRequest) => {
+        mutationFn: (formData: FormData) => {
+            const id = Number(formData.get("id"));
+            const payload = formData;
+            return eventRepository.adminUpdateEvent(id, { payload });
+        },
+        onError: (err, newPayload, context) => {
+            queryClient.setQueryData(["admin-events"], context);
+        },
+        onSettled: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["admin-events"]
+            });
+        },
+        ...options,
+    });
+}
+
+export function useAdminToggleEventActive(
+    req: IHttpRequest<{ id: number; is_active: boolean }>,
+    options?: Omit<UseMutationOptions<IHttpResponse<{}>, unknown, { id: number; is_active: boolean }>, 'mutationKey'>
+) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: ["admin-toggle-event-active", req.payload],
+        mutationFn: (payload: { id: number; is_active: boolean }) => eventRepository.adminToggleEventActive(payload.id, { payload }),
+        onMutate: async (newPayload: { id: number; is_active: boolean }) => {
             await queryClient.cancelQueries({ queryKey: ["admin-events"] });
-            console.log("Updating event with payload:", newPayload);
 
             const previous = queryClient.getQueryData<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>(["admin-events"]);
 
             queryClient.setQueryData<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>(['admin-events'], (old) => {
-                console.log(old)
                 if (!old) return old;
                 const updatedEvents = old.data.data.map(event =>
                     event.id === newPayload.id
                         ? { ...event, is_active: newPayload.is_active }
                         : event
                 );
-                const returned = {
+                return {
                     ...old,
                     data: {
                         ...old.data,
                         data: updatedEvents,
                     }
-                };
-                return returned as IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>;
+                } as IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>;
             });
 
             return { previous };
@@ -117,9 +138,6 @@ export function useAdminUpdateEvent(
             queryClient.invalidateQueries({
                 queryKey: ["admin-events"]
             });
-            queryClient.invalidateQueries({
-                queryKey: ["event", { slug: req.payload?.slug }]
-            })
         },
         ...options,
     });

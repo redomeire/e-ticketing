@@ -114,10 +114,25 @@ type IAdminUpdateEventRequest = (Partial<IEvent> & {
 type IAdminUpdateEventResponse = IEvent;
 
 const adminUpdateEvent = async (
-    params: IHttpRequest<IAdminUpdateEventRequest>
+    id: number,
+    params: IHttpRequest<FormData>
 ): Promise<IHttpResponse<IAdminUpdateEventResponse>> => {
+    const response = await api.post( // spoof PUT with POST
+        `/event/admin/${id}`,
+        params.payload,
+        params.options
+    );
+    return response.data;
+}
+
+type IAdminToggleEventActiveResponse = IAdminUpdateEventResponse
+
+const adminToggleEventActive = async (
+    id: number,
+    params: IHttpRequest<{ is_active: boolean }>
+): Promise<IHttpResponse<IAdminToggleEventActiveResponse>> => {
     const response = await api.put(
-        `/event/admin/${params.payload?.id}`,
+        `/event/admin/${id}`,
         params.payload,
         params.options
     );
@@ -166,6 +181,7 @@ const eventRepository = {
     getEventCategories,
     adminGetEvents,
     adminUpdateEvent,
+    adminToggleEventActive,
     adminUpdateSeats,
     adminCreateEventCategory,
     adminCreateEvent

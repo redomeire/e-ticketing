@@ -140,10 +140,10 @@ class EventController extends Controller
 
             if ($request->hasFile('cover_image')) {
                 $image = $request->file('cover_image');
-                $imageName = time() . '_' . $image->getClientOriginalName();
+                $image_name = time() . '_' . $image->getClientOriginalName();
                 $uploaded_file = $this->image_upload_service->uploadFile(
                     $image,
-                    $imageName,
+                    $image_name,
                     'event_covers'
                 );
                 if ($uploaded_file->error) {
@@ -199,6 +199,10 @@ class EventController extends Controller
     }
     public function update(Request $request, $id)
     {
+        $event_categories = json_decode($request->event_categories, true);
+        $request->merge([
+            'event_categories' => $event_categories,
+        ]);
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|required|string|max:255',
             'description' => 'sometimes|string',
@@ -209,6 +213,7 @@ class EventController extends Controller
             'location' => 'sometimes|required|string|max:255',
             'event_categories' => 'sometimes|array',
             'event_categories.*.name' => 'required_with:event_categories|string',
+            'cover_image' => 'sometimes|image|mimes:jpeg,png,jpg|max:5000',
         ]);
 
         if ($validator->fails()) {
@@ -240,7 +245,19 @@ class EventController extends Controller
                 }
                 $event->categories()->sync($categoryIds);
             }
-
+            if ($request->hasFile('cover_image')) {
+                if ($event->cover_image_url) {
+                    $this->image_upload_service->deleteImage($event->cover_image_url);
+                }
+                $image = $request->file('cover_image');
+                $image_name = time() . '_' . $image->getClientOriginalName();
+                $uploaded_file = $this->image_upload_service->uploadFile(
+                    $image,
+                    $image_name,
+                    'event_covers'
+                );
+                $event->update(['cover_image_url' => $uploaded_file->result->url]);
+            }
             DB::commit();
 
             return $this->sendResponse($event->load('categories'), 'Event metadata updated successfully');

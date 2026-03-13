@@ -35,7 +35,7 @@ import {
     PlusSignIcon as PlusIcon,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useAdminGetEvents, useAdminUpdateEvent } from "@/modules/event/hooks/useEventRepository";
+import { useAdminGetEvents, useAdminToggleEventActive } from "@/modules/event/hooks/useEventRepository";
 import { formatDate } from "@/lib/utils/formatDate";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
@@ -66,7 +66,7 @@ function PageContent() {
         staleTime: Infinity
     });
 
-    const { mutateAsync } = useAdminUpdateEvent({})
+    const { mutateAsync } = useAdminToggleEventActive({})
 
     const toggleStatus = async (id: number, isActive: boolean) => {
         await mutateAsync({
