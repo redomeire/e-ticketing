@@ -77,7 +77,7 @@ export default function Page() {
                         <div className="space-y-2">
                             <div className="flex justify-between">
                                 <Label htmlFor="password" className="text-sm font-bold text-gray-700">Password</Label>
-                                <a href="#" className="text-xs font-bold text-blue-600 hover:underline">Lupa Password?</a>
+                                <Link href="/auth/forgot-password" className="text-xs font-bold text-blue-600 hover:underline">Lupa Password?</Link>
                             </div>
                             <div className="relative">
                                 <Input
