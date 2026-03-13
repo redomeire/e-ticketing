@@ -1,14 +1,10 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-    ArrowLeft01Icon,
-} from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
 import FormProviderWrapper from "@/components/provider/FormProviderWrapper";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +17,9 @@ import {
     useGetEventCategories,
 } from "@/modules/event/hooks/useEventRepository";
 import { IAdminCreateEventCategoryRequest, IGetEventDetailResponse } from "@/modules/event/repositories/event.repository";
+import { InformationCircleIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import DropzoneComponent from "@/components/ui/dropzone";
 
 interface Props {
     event: IGetEventDetailResponse;
@@ -69,24 +68,48 @@ export default function UpdateEventForm({ event }: Props) {
                 </div>
 
                 <Card className="border-none shadow-sm rounded-[2rem] bg-white p-10 space-y-8">
-                    <div className="grid md:grid-cols-2 gap-8">
-                        <Input name="name" label="NAMA EVENT" withValidation className="h-12 rounded-xl" />
-                        <Input name="location" label="LOKASI" withValidation className="h-12 rounded-xl" />
-                        <Input name="start_time" type="datetime-local" label="MULAI" withValidation className="h-12 rounded-xl" />
-                        <Input name="end_time" type="datetime-local" label="SELESAI" withValidation className="h-12 rounded-xl" />
-                    </div>
-                    <div className="grid gap-8">
-                        <Textarea name="description" withValidation label="DESKRIPSI" className="min-h-32 rounded-2xl" />
-                        <Textarea name="terms_and_conditions" withValidation label="SYARAT & KETENTUAN" className="min-h-32 rounded-2xl" />
-                    </div>
-                    <SearchInputTag<IEventCategory, IAdminCreateEventCategoryRequest>
-                        name="event_categories"
-                        label="TAG KATEGORI"
-                        getDisplayValue={(item) => item.name}
-                        getValue={(item) => item.id}
-                        useQueryHook={useGetEventCategories}
-                        useMutationHook={useAdminCreateEventCategory}
-                    />
+                    <CardHeader className="pb-4 border-b border-slate-50 px-10 pt-8">
+                        <div className="flex items-center gap-2 text-[#002558]">
+                            <HugeiconsIcon icon={InformationCircleIcon} size={20} />
+                            <CardTitle className="text-lg font-black uppercase tracking-tight">Metadata Event</CardTitle>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-10 space-y-8">
+                        <DropzoneComponent
+                            name="cover_image"
+                            withValidation
+                            withPreview
+                            cover_image_url={event.cover_image_url}
+                            options={{
+                                accept: {
+                                    "image/svg+xml": [],
+                                    "image/png": [],
+                                    "image/jpg": [],
+                                    "image/gif": [],
+                                },
+                                maxSize: 3 * 1024 * 1024,
+                                multiple: false
+                            }}
+                        />
+                        <div className="grid md:grid-cols-2 gap-8">
+                            <Input name="name" label="NAMA EVENT" withValidation className="h-12 rounded-xl" />
+                            <Input name="location" label="LOKASI" withValidation className="h-12 rounded-xl" />
+                            <Input name="start_time" type="datetime-local" label="MULAI" withValidation className="h-12 rounded-xl" />
+                            <Input name="end_time" type="datetime-local" label="SELESAI" withValidation className="h-12 rounded-xl" />
+                        </div>
+                        <div className="grid gap-8">
+                            <Textarea name="description" withValidation label="DESKRIPSI" className="min-h-32 rounded-2xl" />
+                            <Textarea name="terms_and_conditions" withValidation label="SYARAT & KETENTUAN" className="min-h-32 rounded-2xl" />
+                        </div>
+                        <SearchInputTag<IEventCategory, IAdminCreateEventCategoryRequest>
+                            name="event_categories"
+                            label="TAG KATEGORI"
+                            getDisplayValue={(item) => item.name}
+                            getValue={(item) => item.id}
+                            useQueryHook={useGetEventCategories}
+                            useMutationHook={useAdminCreateEventCategory}
+                        />
+                    </CardContent>
                 </Card>
             </form>
         </FormProviderWrapper>

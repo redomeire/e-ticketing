@@ -143,5 +143,8 @@ return [
         'superadmin_password' => env('SUPERADMIN_PASSWORD'),
         'xendit_secret_key' => env('XENDIT_SECRET_API_KEY'),
         'frontend_url' => env('FRONTEND_URL'),
+        'imagekit_public_key' => env('IMAGEKIT_PUBLIC_KEY'),
+        'imagekit_private_key' => env('IMAGEKIT_PRIVATE_KEY'),
+        'imagekit_url_endpoint' => env('IMAGEKIT_URL_ENDPOINT'),
     ],
 ];

@@ -61,12 +61,12 @@ export function useAdminGetEvents(
 
 export function useAdminCreateEvent(
     req: IHttpRequest<IAdminCreateEventRequest>,
-    options?: Omit<UseMutationOptions<IHttpResponse<{}>, unknown, IAdminCreateEventRequest>, 'mutationKey'>
+    options?: Omit<UseMutationOptions<IHttpResponse<{}>, unknown, FormData>, 'mutationKey'>
 ) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationKey: ["admin-create-event", req.payload],
-        mutationFn: (payload: IAdminCreateEventRequest) => eventRepository.adminCreateEvent({ payload }),
+        mutationFn: (payload: FormData) => eventRepository.adminCreateEvent({ payload }),
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ["admin-events"]

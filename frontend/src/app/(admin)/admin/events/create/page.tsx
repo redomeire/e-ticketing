@@ -18,7 +18,7 @@ import {
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import FormProviderWrapper from "@/components/provider/FormProviderWrapper";
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createEventSchema, CreateEventValues } from "@/modules/event/schema/createEvent.schema";
 import { formatCurrency } from "@/lib/utils/formatCurrency";
@@ -28,6 +28,7 @@ import { useAdminCreateEvent, useAdminCreateEventCategory, useGetEventCategories
 import { IAdminCreateEventCategoryRequest } from "@/modules/event/repositories/event.repository";
 import { useRouter } from "next/navigation";
 import { generateColor } from "@/modules/event/utils/generateColor";
+import Dropzone from "@/components/ui/dropzone";
 
 interface ICategoryState {
     id: string;
@@ -49,12 +50,13 @@ export default function CreateEventPage() {
     const form = useForm<CreateEventValues>({
         resolver: zodResolver(createEventSchema),
         defaultValues: {
-            name: "Black Myth Wukong Release Playgame",
-            description: "Black Myth: Wukong is a 2024 action-RPG from Game Science...",
-            terms_and_conditions: "Do NOT Insult other influencers or Players",
-            start_time: "2026-03-12T15:25",
-            end_time: "2026-03-15T17:00",
-            location: "SCBD",
+            name: "",
+            location: "",
+            description: "",
+            terms_and_conditions: "",
+            start_time: "",
+            end_time: "",
+            event_categories: [],
             max_row: 10,
             max_column: 10,
             ticket_categories: [],
@@ -66,7 +68,13 @@ export default function CreateEventPage() {
         { id: "VIP", name: "VIP", price: 75000, quota: 1, colors: generateColor("VIP") }
     ]);
 
-    const { mutateAsync: createEvent, isPending } = useAdminCreateEvent({});
+    const { mutateAsync: createEvent, isPending } = useAdminCreateEvent({
+        options: {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        }
+    });
 
     const [activeCategoryId, setActiveCategoryId] = useState<string>("REGULAR");
     const [seatData, setSeatData] = useState<Record<string, string>>({});
@@ -90,6 +98,19 @@ export default function CreateEventPage() {
         }));
         form.setValue("ticket_categories", updatedTicketCats, { shouldValidate: true });
     }, [seatData, categories, form]);
+
+    useEffect(() => {
+        // calculate quota based on seatData and group by category
+        const categoryCountMap: Record<string, number> = {};
+        Object.values(seatData).forEach(catId => {
+            if (!categoryCountMap[catId]) categoryCountMap[catId] = 0;
+            categoryCountMap[catId]++;
+        });
+        setCategories(prev => prev.map(cat => ({
+            ...cat,
+            quota: categoryCountMap[cat.id] || 0
+        })));
+    }, [seatData]);
 
     const handleAddCategory = () => {
         if (!newCat.name || !newCat.price) return;
@@ -137,15 +158,26 @@ export default function CreateEventPage() {
         });
     };
 
-    const onSubmit = async (data: CreateEventValues) => {
+    const onSubmit: SubmitHandler<CreateEventValues> = async (data: CreateEventValues) => {
         if (typeof data.event_categories === 'undefined') return;
         const mappedTicketCategories = data.ticket_categories.map((item) => ({
             ...item, base_price: parseFloat(item.base_price)
         }));
-        const result = await createEvent({
-            ...data,
-            ticket_categories: mappedTicketCategories
+        const formData = new FormData();
+        Object.keys(data).forEach((key) => {
+            const value = (data as Record<string, unknown>)[key];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            formData.append(key, (data as Record<string, any>)[key]);
+            if (Array.isArray(value) && value[0] instanceof File) {
+                formData.append(key, value[0]);
+            }
+            else if (key === "event_categories" || key === "ticket_categories") {
+                const jsonValue = key === "ticket_categories" ? mappedTicketCategories : value;
+                formData.append(key, JSON.stringify(jsonValue));
+            }
         });
+
+        const result = await createEvent(formData);
         if (result.success) router.push('/admin/events');
     };
 
@@ -176,6 +208,21 @@ export default function CreateEventPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-10 space-y-8">
+                            <Dropzone
+                                name="cover_image"
+                                withValidation
+                                withPreview
+                                options={{
+                                    accept: {
+                                        "image/svg+xml": [],
+                                        "image/png": [],
+                                        "image/jpg": [],
+                                        "image/gif": [],
+                                    },
+                                    maxSize: 3 * 1024 * 1024,
+                                    multiple: false
+                                }}
+                            />
                             <div className="grid md:grid-cols-2 gap-8">
                                 <Input name="name" label="NAMA EVENT" withValidation className="h-12 rounded-xl" />
                                 <Input name="location" label="LOKASI VENUE" withValidation className="h-12 rounded-xl" />
@@ -184,11 +231,11 @@ export default function CreateEventPage() {
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Deskripsi</Label>
-                                <Textarea name="description" placeholder="Ceritakan detail event Anda..." className="min-h-30 rounded-2xl border-slate-200" />
+                                <Textarea name="description" withValidation placeholder="Ceritakan detail event Anda..." className="min-h-30 rounded-2xl border-slate-200" />
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Syarat & Ketentuan</Label>
-                                <Textarea name="terms_and_conditions" placeholder="Apa syarat dan ketentuan mengikuti event ini" className="min-h-30 rounded-2xl border-slate-200" />
+                                <Textarea name="terms_and_conditions" withValidation placeholder="Apa syarat dan ketentuan mengikuti event ini" className="min-h-30 rounded-2xl border-slate-200" />
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Kategori</Label>
@@ -329,6 +376,24 @@ export default function CreateEventPage() {
                         </Card>
                     </div>
                 </div>
+                {/*display error*/}
+                {
+                    Object.keys(form.formState.errors).length > 0 && (
+                        <Card className="border-none shadow-sm rounded-[2rem] bg-red-50 p-6">
+                            <CardHeader className="flex items-center gap-2 text-red-500">
+                                <HugeiconsIcon icon={InformationCircleIcon} size={20} />
+                                <CardTitle className="text-sm font-black uppercase tracking-tight">Form Error</CardTitle>
+                            </CardHeader>
+                            <CardContent className="text-red-500">
+                                {Object.entries(form.formState.errors).map(([key, error]) => (
+                                    <p key={key} className="text-xs">
+                                        {key}: {error.message}
+                                    </p>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )
+                }
             </form>
         </FormProviderWrapper>
     );

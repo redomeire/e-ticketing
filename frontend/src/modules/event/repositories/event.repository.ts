@@ -97,7 +97,7 @@ type IAdminCreateEventRequest = Partial<IEvent> & {
 }
 
 const adminCreateEvent = async (
-    params: IHttpRequest<IAdminCreateEventRequest>,
+    params: IHttpRequest<FormData>,
 ): Promise<IHttpResponse<{}>> => {
     const response = await api.post(
         '/event/admin',

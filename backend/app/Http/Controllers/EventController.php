@@ -7,6 +7,7 @@ use App\Models\Event;
 use App\Models\EventCategory;
 use App\Models\EventSeat;
 use App\Models\EventTicketCategory;
+use App\Services\ImageUploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -14,6 +15,11 @@ use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
 {
+    protected ImageUploadService $image_upload_service;
+    public function __construct(ImageUploadService $imageUploadService)
+    {
+        $this->image_upload_service = $imageUploadService;
+    }
     // TODO : implement caching for this endpoint
     public function all(Request $request)
     {
@@ -79,10 +85,18 @@ class EventController extends Controller
     {
         DB::beginTransaction();
         try {
+            $ticketCategories = json_decode($request->ticket_categories, true);
+            $eventCategories = json_decode($request->event_categories, true);
+            $request->merge([
+                'ticket_categories' => $ticketCategories,
+                'event_categories' => $eventCategories,
+            ]);
+
             $validator = Validator::make($request->all(), [
                 'name' => 'required|string|max:255',
                 'description' => 'nullable|string',
                 'terms_and_conditions' => 'nullable|string',
+                'cover_image' => 'required|image|mimes:jpeg,png,jpg|max:2048',
                 'start_time' => 'required|date|after:now',
                 'end_time' => 'required|date|after:start_time',
                 'location' => 'required|string|max:255',
@@ -122,6 +136,22 @@ class EventController extends Controller
                 }
                 $categoryIds = EventCategory::whereIn('name', $names)->pluck('id');
                 $event->categories()->sync($categoryIds);
+            }
+
+            if ($request->hasFile('cover_image')) {
+                $image = $request->file('cover_image');
+                $imageName = time() . '_' . $image->getClientOriginalName();
+                $uploaded_file = $this->image_upload_service->uploadFile(
+                    $image,
+                    $imageName,
+                    'event_covers'
+                );
+                if ($uploaded_file->error) {
+                    throw new \Exception('Image upload failed: ' . $uploaded_file->error->message);
+                }
+                $imageUrl = $uploaded_file->result->url;
+                $event->cover_image_url = $imageUrl;
+                $event->save();
             }
 
             $allSeatsToInsert = [];
