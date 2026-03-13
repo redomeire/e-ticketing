@@ -39,6 +39,7 @@ Route::prefix('v1')->group(function () {
                     Route::post('/seats', [EventController::class, 'storeSeats'])->name('event.seats.store');
                     Route::post('/', [EventController::class, 'store'])->name('event.store');
                     Route::put('/{id}', [EventController::class, 'update'])->name('event.update');
+                    Route::put('/{id}/toggle', [EventController::class, 'adminToggleEventActive'])->name('event.update.toggle');
                     Route::put('/{slug}/seats', [EventController::class, 'updateSeats'])->name('event.seats.update');
                     Route::delete('/{id}', [EventController::class, 'destroy'])->name('event.destroy');
                     Route::post('/category', [EventController::class, 'adminStoreEventCategory'])->name('event.category.store');

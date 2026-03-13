@@ -132,7 +132,7 @@ const adminToggleEventActive = async (
     params: IHttpRequest<{ is_active: boolean }>
 ): Promise<IHttpResponse<IAdminToggleEventActiveResponse>> => {
     const response = await api.put(
-        `/event/admin/${id}`,
+        `/event/admin/${id}/toggle`,
         params.payload,
         params.options
     );

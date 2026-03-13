@@ -266,6 +266,29 @@ class EventController extends Controller
             return $this->sendError('Update Failed', ['error' => $e->getMessage()], 500);
         }
     }
+    public function adminToggleEventActive(Request $request, $id)
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'is_active' => 'required|boolean',
+            ]);
+            if ($validator->fails()) {
+                return $this->sendError('Validation Error', $validator->errors(), 422);
+            }
+            $validated = $validator->validated();
+            $event = Event::find($id);
+            if (!$event) {
+                return $this->sendError('Event not found', [], 404);
+            }
+            $event->is_active = $validated['is_active'];
+            $event->save();
+            return $this->sendResponse($event, 'Event active status updated successfully');
+        } catch (\Exception $e) {
+            return $this->sendError('Failed to update event status', [
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function destroy($id)
     {
         try {
