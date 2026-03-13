@@ -1,13 +1,11 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-    ArrowLeft01Icon,
     Ticket01Icon,
     GridIcon,
     Office,
@@ -168,11 +166,6 @@ export default function UpdateSeatsForm({ max_row, max_column, event, seats }: P
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4 pb-20 max-w-7xl mx-auto">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <Link href="/admin/events">
-                            <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-xl border-slate-200">
-                                <HugeiconsIcon icon={ArrowLeft01Icon} size={20} />
-                            </Button>
-                        </Link>
                         <div>
                             <h1 className="text-2xl font-black text-[#002558] tracking-tighter uppercase">Editor Denah</h1>
                             <p className="text-sm text-slate-500 font-bold tracking-tight">{event?.name}</p>
@@ -187,7 +180,7 @@ export default function UpdateSeatsForm({ max_row, max_column, event, seats }: P
                     <Card className="lg:col-span-1 border-none shadow-sm rounded-[2rem] bg-white p-8 space-y-6">
                         <div className="flex items-center gap-2 text-[#002558] mb-4">
                             <HugeiconsIcon icon={Ticket01Icon} size={20} />
-                            <h3 className="text-lg font-black uppercase tracking-tight">Brush Kategori</h3>
+                            <h3 className="text-lg font-black tracking-tight">Brush Kategori</h3>
                         </div>
                         <div className="space-y-3">
                             {categories.map((cat) => (
@@ -225,11 +218,11 @@ export default function UpdateSeatsForm({ max_row, max_column, event, seats }: P
                             <CardHeader className="p-8 border-b flex flex-row items-center justify-between bg-slate-50/50">
                                 <div className="flex items-center gap-2 text-[#002558]">
                                     <HugeiconsIcon icon={GridIcon} size={22} />
-                                    <CardTitle className="text-lg font-black uppercase">Grid Editor</CardTitle>
+                                    <CardTitle className="text-lg font-black">Grid Editor</CardTitle>
                                 </div>
                                 <div className="flex gap-4">
-                                    <Input name="max_row" type="number" label="ROWS" withValidation className="w-24 text-center font-black" />
-                                    <Input name="max_column" type="number" label="COLS" withValidation className="w-24 text-center font-black" />
+                                    <Input name="max_row" type="number" label="Baris" withValidation className="w-24 text-center font-black" />
+                                    <Input name="max_column" type="number" label="Kolom" withValidation className="w-24 text-center font-black" />
                                 </div>
                             </CardHeader>
                             <CardContent className="p-12 bg-slate-50/30 overflow-auto text-center">

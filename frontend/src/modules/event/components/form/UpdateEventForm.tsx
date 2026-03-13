@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -56,14 +55,9 @@ export default function UpdateEventForm({ event }: Props) {
     };
     return (
         <FormProviderWrapper form={form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4 pb-20 max-w-7xl mx-auto">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-4 pb-20">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-6">
-                        <Link href="/admin/events">
-                            <Button type="button" variant="ghost" size="icon" className="h-10 w-10 rounded-xl border-slate-200">
-                                <HugeiconsIcon icon={ArrowLeft01Icon} size={20} />
-                            </Button>
-                        </Link>
                         <div>
                             <h1 className="text-2xl font-black text-[#002558] tracking-tighter uppercase">Update Event</h1>
                             <p className="text-sm text-slate-500 font-bold tracking-tight">{event?.name}</p>

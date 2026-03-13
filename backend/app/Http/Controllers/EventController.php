@@ -291,8 +291,6 @@ class EventController extends Controller
             $event = Event::where('slug', $slug)->first();
             if (!$event)
                 return $this->sendError('Event not found', [], 404);
-
-            // Disarankan: Gunakan Cache::remember jika load-nya tinggi, tapi pastikan di-forget di updateSeats
             $seats = DB::table('event_seats as e')
                 ->join('event_ticket_categories as tc', 'e.ticket_category_id', '=', 'tc.id')
                 ->where('tc.event_id', $event->id)
@@ -409,9 +407,13 @@ class EventController extends Controller
                 ->keyBy(fn($s) => $s->row_index . '-' . $s->column_index);
 
             foreach ($request->ticket_categories as $catData) {
+                $validSeatsInPayload = collect($catData['seats'])->filter(function ($s) use ($event) {
+                    return ((int) $s['row'] - 1) < $event->max_row && ((int) $s['column'] - 1) < $event->max_column;
+                });
+                $calculatedQuota = $validSeatsInPayload->count();
                 $category = $event->ticketCategories()->updateOrCreate(
                     ['name' => $catData['name']],
-                    ['base_price' => $catData['base_price'], 'quota' => $catData['quota']]
+                    ['base_price' => $catData['base_price'], 'quota' => $calculatedQuota]
                 );
                 $activeCategoryIds[] = $category->id;
 
