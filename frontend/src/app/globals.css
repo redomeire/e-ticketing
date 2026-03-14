@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -125,5 +126,20 @@
   }
   html {
     @apply font-sans;
+  }
+  .tiptap h1 {
+    @apply text-3xl font-black mb-4 mt-6;
+  }
+  .tiptap h2 {
+    @apply text-2xl font-extrabold mb-3 mt-5;
+  }
+  .tiptap ul {
+    @apply list-disc ml-6 my-4;
+  }
+  .tiptap ol {
+    @apply list-decimal ml-6 my-4;
+  }
+  .tiptap blockquote {
+    @apply border-l-4 border-slate-200 pl-4 italic my-4;
   }
 }

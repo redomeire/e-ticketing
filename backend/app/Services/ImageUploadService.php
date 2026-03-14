@@ -35,8 +35,6 @@ class ImageUploadService
             if (count($found_image->result) > 0) {
                 $response = $this->imageKit->deleteFile($found_image->result[0]->fileId);
                 return $response;
-            } else {
-                throw new \Exception('File not found: ' . $filename);
             }
         } catch (\Exception $e) {
             throw new \Exception('Failed to delete file: ' . $e->getMessage());
