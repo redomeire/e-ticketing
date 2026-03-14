@@ -18,6 +18,10 @@ Route::prefix('v1')->group(function () {
             ->group(function () {
                 Route::post('register', [AuthController::class, 'register'])->name('register');
                 Route::post('login', [AuthController::class, 'login'])->name('login');
+                Route::get('verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
+                Route::post('/send-verification-email', [AuthController::class, 'sendVerificationEmail'])->name('verification.send');
+                Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
+                Route::post('/reset-password/{token}', [AuthController::class, 'resetPassword'])->name('password.update');
             });
     });
 
@@ -25,7 +29,7 @@ Route::prefix('v1')->group(function () {
         Route::post('/seats/checkout/webhook', [OrderController::class, 'checkoutWebhook'])->name('event.seats.checkout.webhook');
         Route::get('/', [EventController::class, 'all'])->name('event.all');
         Route::get('/categories', [EventController::class, 'getEventCategories'])->name('event.categories');
-        Route::middleware(['auth:sanctum', CheckUserActive::class])->group(function () {
+        Route::middleware(['auth:sanctum', CheckUserActive::class, 'verified'])->group(function () {
             Route::prefix('orders')->group(function () {
                 Route::get('/', [OrderController::class, 'all'])->name('event.orders');
                 Route::get('/{id}', [OrderController::class, 'show'])->name('event.orders.show');

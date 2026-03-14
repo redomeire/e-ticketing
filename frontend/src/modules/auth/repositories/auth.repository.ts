@@ -29,11 +29,54 @@ const logout = async (
     return response.data;
 }
 
-const authRepository = {
-    logout,
-    register
+const forgotPassword = async (
+    params: IHttpRequest<{ email: string }>
+): Promise<IHttpResponse<{}>> => {
+    const response = await api.post(
+        '/auth/forgot-password',
+        params.payload,
+        params.options
+    );
+    return response.data;
 }
 
-export type { IRegisterRequest };
+const sendVerificationEmail = async (
+    params: IHttpRequest<{ email: string }>
+): Promise<IHttpResponse<{}>> => {
+    const response = await api.post(
+        '/auth/send-verification-email',
+        params.payload,
+        params.options
+    );
+    return response.data;
+}
+
+interface IResetPasswordRequest {
+    token: string;
+    password: string;
+    email: string;
+    password_confirmation: string;
+}
+
+const resetPassword = async (
+    params: IHttpRequest<IResetPasswordRequest>
+): Promise<IHttpResponse<{}>> => {
+    const response = await api.post(
+        `/auth/reset-password/${params.payload?.token}`,
+        params.payload,
+        params.options
+    );
+    return response.data;
+}
+
+const authRepository = {
+    logout,
+    register,
+    forgotPassword,
+    sendVerificationEmail,
+    resetPassword,
+}
+
+export type { IRegisterRequest, IResetPasswordRequest };
 
 export default authRepository;
