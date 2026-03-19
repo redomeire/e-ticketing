@@ -33,13 +33,15 @@ import {
     ViewIcon,
     Search01Icon as SearchIcon,
     PlusSignIcon as PlusIcon,
+    Trash,
 } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { useAdminGetEvents, useAdminToggleEventActive } from "@/modules/event/hooks/useEventRepository";
+import { useAdminDeleteEvent, useAdminGetEvents, useAdminToggleEventActive } from "@/modules/event/hooks/useEventRepository";
 import { formatDate } from "@/lib/utils/formatDate";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils/cn";
 import { QueryStateHandler } from "@/components/query/QueryStateHandler";
+import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 function PageContent() {
     const router = useRouter();
@@ -66,14 +68,34 @@ function PageContent() {
         staleTime: Infinity
     });
 
-    const { mutateAsync } = useAdminToggleEventActive({})
+    const { mutateAsync: toggleEvent } = useAdminToggleEventActive({
+        options: {
+            params: {
+                page: parseInt(pageQuery, 10),
+                limit: parseInt(limitQuery, 10),
+                search: searchQuery
+            }
+        }
+    })
+
+    const { mutateAsync: deleteEvent, isPending: isPendingDelete } = useAdminDeleteEvent({
+        payload: {
+            id: 0
+        }
+    })
 
     const toggleStatus = async (id: number, isActive: boolean) => {
-        await mutateAsync({
+        await toggleEvent({
             id,
             is_active: !isActive
         })
     };
+
+    const handleDelete = async (id: number) => {
+        await deleteEvent({
+            id
+        })
+    }
 
     const capacities = useMemo(() => {
         if (!events) return {};
@@ -152,7 +174,7 @@ function PageContent() {
                                 <TableHead className="font-bold text-slate-700 text-sm uppercase px-6">Tanggal</TableHead>
                                 <TableHead className="font-bold text-slate-700 text-sm uppercase px-6 text-center">Kapasitas</TableHead>
                                 <TableHead className="font-bold text-slate-700 text-sm uppercase px-6 text-center">Status</TableHead>
-                                <TableHead className="font-bold text-slate-700 text-sm uppercase px-8 text-right">Aksi</TableHead>
+                                <TableHead className="font-bold text-slate-700 text-sm uppercase px-8 text-center">Aksi</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -184,6 +206,35 @@ function PageContent() {
                                                 <HugeiconsIcon icon={ViewIcon} size={24} />
                                             </Button>
                                         </Link>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button variant="destructive" size="icon" className="w-12 h-12 bg-transparent hover:bg-red-50 hover:text-red-700 text-red-600 rounded-xl transition-all">
+                                                    <HugeiconsIcon icon={Trash} size={20} />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="max-w-md">
+                                                <div className="flex flex-col gap-6">
+                                                    <DialogTitle className="text-xl font-bold text-slate-900">Hapus Event</DialogTitle>
+                                                    <DialogDescription className="text-sm text-slate-600">Apakah Anda yakin ingin menghapus event &quot;{event.name}&quot;? Tindakan ini tidak dapat dibatalkan.</DialogDescription>
+                                                    <div className="flex justify-end gap-4">
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" className="rounded-xl">
+                                                                Batal
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <Button
+                                                            onClick={() => handleDelete(event.id)}
+                                                            variant="destructive" className="rounded-xl"
+                                                            isLoading={
+                                                                isPendingDelete && event.id === (events?.data.data.find(e => e.id === event.id)?.id || 0)
+                                                            }
+                                                        >
+                                                            Hapus
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </DialogContent>
+                                        </Dialog>
                                     </TableCell>
                                 </TableRow>
                             ))}

@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
     ArrowLeft01Icon,
     Ticket01Icon,
@@ -29,6 +28,7 @@ import { IAdminCreateEventCategoryRequest } from "@/modules/event/repositories/e
 import { useRouter } from "next/navigation";
 import { generateColor } from "@/modules/event/utils/generateColor";
 import Dropzone from "@/components/ui/dropzone";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 
 interface ICategoryState {
     id: string;
@@ -42,8 +42,6 @@ interface ICategoryState {
         selected: string;
     };
 }
-
-// TODO: Add image upload and preview feature for event thumbnail/banner. This can be done using a simple file input and storing the image in a temporary state before submission. Consider using a library like react-dropzone for a better user experience.
 
 export default function CreateEventPage() {
     const router = useRouter();
@@ -64,8 +62,20 @@ export default function CreateEventPage() {
     });
 
     const [categories, setCategories] = useState<ICategoryState[]>([
-        { id: "REGULAR", name: "REGULAR", price: 50000, quota: 1, colors: generateColor("REGULAR") },
-        { id: "VIP", name: "VIP", price: 75000, quota: 1, colors: generateColor("VIP") }
+        {
+            id: "REGULAR",
+            name: "REGULAR",
+            price: 50000,
+            quota: 1,
+            colors: generateColor("REGULAR")
+        },
+        {
+            id: "VIP",
+            name: "VIP",
+            price: 75000,
+            quota: 1,
+            colors: generateColor("VIP")
+        }
     ]);
 
     const { mutateAsync: createEvent, isPending } = useAdminCreateEvent({
@@ -231,11 +241,19 @@ export default function CreateEventPage() {
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Deskripsi</Label>
-                                <Textarea name="description" withValidation placeholder="Ceritakan detail event Anda..." className="min-h-30 rounded-2xl border-slate-200" />
+                                <RichTextEditor
+                                    name="description"
+                                    withValidation
+                                    placeholder="Deskripsikan event kamu secara menarik untuk calon penonton"
+                                />
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Syarat & Ketentuan</Label>
-                                <Textarea name="terms_and_conditions" withValidation placeholder="Apa syarat dan ketentuan mengikuti event ini" className="min-h-30 rounded-2xl border-slate-200" />
+                                <RichTextEditor
+                                    name="terms_and_conditions"
+                                    withValidation
+                                    placeholder="Jelaskan syarat dan ketentuan event kamu dengan jelas untuk menghindari kebingungan di kemudian hari"
+                                />
                             </div>
                             <div className="space-y-3">
                                 <Label className="text-sm font-black text-[#002558] uppercase tracking-tighter">Kategori</Label>

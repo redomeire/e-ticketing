@@ -17,7 +17,11 @@ class Order extends Model
         'invoice_id',
         'payment_url',
         'status',
-        'total_amount'
+        'total_amount',
+        'event_name',
+        'event_location',
+        'event_start_time',
+        'event_end_time',
     ];
     protected $casts = [
         'total_amount' => 'float',

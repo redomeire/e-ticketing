@@ -75,11 +75,8 @@ class UserController extends Controller
             if (!$user) {
                 return $this->sendError('User not found', [], 404);
             }
-            if (
-                $user->role === 'admin'
-                || $user->role === 'superadmin'
-            ) {
-                return $this->sendError('Cannot update admin user', [], 403);
+            if ($request->user()->cannot('update', $user)) {
+                return $this->sendError('Unauthorized operation', [], 403);
             }
             if (isset($validated['is_active'])) {
                 $user->is_active = $validated['is_active'];
@@ -98,6 +95,8 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        //
+        if (request()->user()->cannot('delete', $user)) {
+            return $this->sendError('Unauthorized operation', [], 403);
+        }
     }
 }

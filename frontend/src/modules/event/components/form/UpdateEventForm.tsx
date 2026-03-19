@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import FormProviderWrapper from "@/components/provider/FormProviderWrapper";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +19,7 @@ import { IAdminCreateEventCategoryRequest, IGetEventDetailResponse } from "@/mod
 import { InformationCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import DropzoneComponent from "@/components/ui/dropzone";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 
 interface Props {
     event: IGetEventDetailResponse;
@@ -127,8 +127,18 @@ export default function UpdateEventForm({ event }: Props) {
                             <Input name="end_time" type="datetime-local" label="SELESAI" withValidation className="h-12 rounded-xl" />
                         </div>
                         <div className="grid gap-8">
-                            <Textarea name="description" withValidation label="DESKRIPSI" className="min-h-32 rounded-2xl" />
-                            <Textarea name="terms_and_conditions" withValidation label="SYARAT & KETENTUAN" className="min-h-32 rounded-2xl" />
+                            <RichTextEditor
+                                name="description"
+                                withValidation
+                                label="DESKRIPSI"
+                                placeholder="Deskripsikan event kamu secara menarik untuk calon penonton"
+                            />
+                            <RichTextEditor
+                                name="terms_and_conditions"
+                                withValidation
+                                label="SYARAT & KETENTUAN"
+                                placeholder="Deskripsikan event kamu secara menarik untuk calon penonton"
+                            />
                         </div>
                         <SearchInputTag<IEventCategory, IAdminCreateEventCategoryRequest>
                             name="event_categories"

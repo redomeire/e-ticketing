@@ -15,6 +15,10 @@ return new class extends Migration {
             $table->foreignId('user_id')
                 ->constrained()
                 ->onDelete('cascade');
+            $table->string('event_name');
+            $table->string('event_location');
+            $table->dateTime('event_start_time');
+            $table->datetime('event_end_time');
             $table->string('invoice_id')->unique();
             $table->enum('status', ['pending', 'paid', 'expired', 'failed'])->default('pending');
             $table->decimal('total_amount', 15, 2)->default(0);

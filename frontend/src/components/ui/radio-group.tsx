@@ -1,41 +1,96 @@
 "use client"
 
 import * as React from "react"
-import { RadioGroup as RadioGroupPrimitive } from "radix-ui"
-
+import * as RadioGroupPrimitive from "@radix-ui/react-radio-group"
+import { useFormContext, Controller } from "react-hook-form"
 import { cn } from "@/lib/utils/cn"
+
+interface RadioGroupProps extends React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Root> {
+  name?: string;
+  withValidation?: boolean;
+  label?: string;
+}
 
 function RadioGroup({
   className,
+  name,
+  withValidation,
+  label,
+  children,
   ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Root>) {
+}: RadioGroupProps) {
+  const useOptionalFormContext = () => {
+    try {
+      return useFormContext();
+    } catch {
+      return null;
+    }
+  };
+
+  const form = useOptionalFormContext();
+  if (!withValidation || !name || !form) {
+    return (
+      <div className="space-y-3">
+        {label && <label className="text-sm font-black text-[#002558] uppercase tracking-tighter">{label}</label>}
+        <RadioGroupPrimitive.Root
+          data-slot="radio-group"
+          className={cn("grid w-full gap-3", className)}
+          {...props}
+        >
+          {children}
+        </RadioGroupPrimitive.Root>
+      </div>
+    )
+  }
+
   return (
-    <RadioGroupPrimitive.Root
-      data-slot="radio-group"
-      className={cn("grid w-full gap-3", className)}
-      {...props}
-    />
+    <div className="space-y-3">
+      {label && <label className="text-sm font-black text-[#002558] uppercase tracking-tighter">{label}</label>}
+      <Controller
+        name={name}
+        control={form.control}
+        render={({ field, fieldState: { error } }) => (
+          <div className="space-y-2">
+            <RadioGroupPrimitive.Root
+              data-slot="radio-group"
+              className={cn("grid w-full gap-3", className)}
+              {...props}
+              value={field.value?.toString()} // Pastikan string untuk Radix
+              onValueChange={field.onChange}
+            >
+              {children}
+            </RadioGroupPrimitive.Root>
+
+            {error && (
+              <p className="text-[10px] font-black text-red-500 uppercase tracking-widest animate-in fade-in slide-in-from-top-1">
+                {error.message}
+              </p>
+            )}
+          </div>
+        )}
+      />
+    </div>
   )
 }
 
 function RadioGroupItem({
   className,
   ...props
-}: React.ComponentProps<typeof RadioGroupPrimitive.Item>) {
+}: React.ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>) {
   return (
     <RadioGroupPrimitive.Item
       data-slot="radio-group-item"
       className={cn(
-        "group/radio-group-item peer relative flex aspect-square size-4 shrink-0 rounded-full border border-input outline-none after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 aria-invalid:aria-checked:border-primary dark:bg-input/30 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground dark:data-checked:bg-primary",
+        "group/radio-group-item peer relative flex aspect-square size-5 shrink-0 rounded-full border border-slate-200 outline-none transition-all focus-visible:ring-2 focus-visible:ring-blue-600 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600",
         className
       )}
       {...props}
     >
       <RadioGroupPrimitive.Indicator
         data-slot="radio-group-indicator"
-        className="flex size-4 items-center justify-center"
+        className="flex size-full items-center justify-center"
       >
-        <span className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary-foreground" />
+        <span className="size-2 rounded-full bg-white shadow-sm" />
       </RadioGroupPrimitive.Indicator>
     </RadioGroupPrimitive.Item>
   )

@@ -1,8 +1,7 @@
 import { IHttpRequest, IHttpResponse, IPaginatedData } from "@/config/http";
 import { useMutation, UseMutationOptions, useQuery, useQueryClient, UseQueryOptions } from "@tanstack/react-query";
 import { IUser } from "../types/user";
-import userRepository from "../repositories/user.repository";
-import { IAdminUpdateEventRequest } from "@/modules/event/repositories/event.repository";
+import userRepository, { IAdminToggleUserActiveRequest } from "../repositories/user.repository";
 
 export function useAdminGetUsers(
     req: IHttpRequest<{}>,
@@ -16,13 +15,13 @@ export function useAdminGetUsers(
 }
 
 export function useAdminToggleUserActive(
-    req: IHttpRequest<IAdminUpdateEventRequest>,
-    options?: Omit<UseMutationOptions<IHttpResponse<{}>, unknown, IAdminUpdateEventRequest>, 'mutationKey'>
+    req: IHttpRequest<IAdminToggleUserActiveRequest>,
+    options?: Omit<UseMutationOptions<IHttpResponse<{}>, unknown, IAdminToggleUserActiveRequest>, 'mutationKey'>
 ) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationKey: ["admin-update-user", req.payload],
-        mutationFn: (payload: IAdminUpdateEventRequest) => userRepository.adminToggleUserActive({ payload }),
+        mutationFn: (payload: IAdminToggleUserActiveRequest) => userRepository.adminToggleUserActive({ payload }),
         onSuccess: () => {
             queryClient.invalidateQueries({
                 queryKey: ["admin-users"]

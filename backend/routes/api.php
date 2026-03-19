@@ -16,14 +16,23 @@ Route::prefix('v1')->group(function () {
             });
         Route::middleware(['guest'])
             ->group(function () {
-                Route::post('register', [AuthController::class, 'register'])->name('register');
-                Route::post('login', [AuthController::class, 'login'])->name('login');
+                Route::post('register', [AuthController::class, 'register'])->middleware('throttle:register')->name('register');
+                Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login');
                 Route::get('verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
-                Route::post('/send-verification-email', [AuthController::class, 'sendVerificationEmail'])->name('verification.send');
-                Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
-                Route::post('/reset-password/{token}', [AuthController::class, 'resetPassword'])->name('password.update');
+                Route::post('/send-verification-email', [AuthController::class, 'sendVerificationEmail'])->middleware('throttle:send-verification-email')->name('verification.send');
+                Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:password-forgot')->name('password.email');
+                Route::post('/reset-password/{token}', [AuthController::class, 'resetPassword'])->middleware('throttle:password-reset')->name('password.update');
             });
     });
+
+    Route::middleware(['auth:sanctum', 'abilities:profile-manage'])
+        ->group(function () {
+            Route::prefix('profile')->group(function () {
+                Route::get('/', [ProfileController::class, 'show'])->name('profile.show');
+                Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
+                Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
+            });
+        });
 
     Route::prefix('event')->group(function () {
         Route::post('/seats/checkout/webhook', [OrderController::class, 'checkoutWebhook'])->name('event.seats.checkout.webhook');
@@ -37,12 +46,6 @@ Route::prefix('v1')->group(function () {
             Route::get('/attendee', [EventController::class, 'getAttendees'])->name('event.attendees');
             Route::get('/{slug}/seats', [EventController::class, 'getSeats'])->name('event.seats');
             Route::post('/seats/checkout', [OrderController::class, 'checkout'])->name('event.seats.checkout');
-
-            Route::prefix('profile')->group(function () {
-                Route::get('/', [ProfileController::class, 'show'])->name('profile.show');
-                Route::put('/', [ProfileController::class, 'update'])->name('profile.update');
-                Route::delete('/', [ProfileController::class, 'destroy'])->name('profile.destroy');
-            });
 
             Route::prefix('admin')->group(function () {
                 Route::middleware(['abilities:event-manage'])->group(function () {

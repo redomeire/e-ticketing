@@ -13,6 +13,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        // admins
         User::create([
             'name' => 'Super Admin',
             'email' => config('app.additional_config_files.superadmin_email'),
@@ -28,6 +29,15 @@ class UserSeeder extends Seeder
             'email_verified_at' => now(),
             'is_active' => true,
             'password' => Hash::make(config('app.additional_config_files.admin_password')),
+        ]);
+        // user
+        User::create([
+            'name' => 'Test User',
+            'email' => 'test@gmail.com',
+            'role' => 'user',
+            'email_verified_at' => now(),
+            'is_active' => true,
+            'password' => Hash::make('testpassword'),
         ]);
     }
 }

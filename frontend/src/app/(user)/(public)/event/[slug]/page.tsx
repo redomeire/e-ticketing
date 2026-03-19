@@ -12,6 +12,7 @@ import { formatCurrency } from "@/lib/utils/formatCurrency";
 import { formatDate } from "@/lib/utils/formatDate";
 import EventDetailSummaryCard from "@/modules/event/components/card/EventDetailSummaryCard";
 import BottomDrawer from "@/modules/order/components/drawer/BottomDrawer";
+import HTMLRenderer from "@/components/ui/html-renderer";
 
 const event_data = {
     image_url: "https://images.unsplash.com/photo-1772090049995-6116febe0d60?q=80&w=735&auto=format&fit=crop",
@@ -114,9 +115,7 @@ export default async function Page({ params }: Props) {
 
                             <TabsContent value="deskripsi" className="py-8 prose prose-blue max-w-none">
                                 <h3 className="text-xl font-bold text-[#002558] mb-4">Tentang Event</h3>
-                                <p className="text-gray-600 leading-relaxed text-lg">
-                                    {event.description}
-                                </p>
+                                <HTMLRenderer html={event.description as string} />
                             </TabsContent>
 
                             <TabsContent value="tiket" className="py-8">
@@ -163,9 +162,7 @@ export default async function Page({ params }: Props) {
                             </TabsContent>
                             <TabsContent value="s&k" className="py-8">
                                 <h3 className="text-xl font-bold text-[#002558] mb-4">Syarat & Ketentuan</h3>
-                                <p className="text-gray-600 leading-relaxed text-lg">
-                                    {event.terms_and_conditions}
-                                </p>
+                                <HTMLRenderer html={event.terms_and_conditions as string} />
                             </TabsContent>
                         </Tabs>
                     </div>

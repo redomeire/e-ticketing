@@ -282,7 +282,8 @@ class EventController extends Controller
             }
             $event->is_active = $validated['is_active'];
             $event->save();
-            return $this->sendResponse($event, 'Event active status updated successfully');
+            $message = $event->is_active ? 'Event activated successfully' : 'Event deactivated successfully';
+            return $this->sendResponse($event, $message);
         } catch (\Exception $e) {
             return $this->sendError('Failed to update event status', [
                 'error' => $e->getMessage(),

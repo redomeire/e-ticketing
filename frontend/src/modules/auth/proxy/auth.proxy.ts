@@ -27,22 +27,24 @@ export default function withAuth(
         response: NextResponse
     ) => {
         const session = await auth();
-        const role = session?.user?.role;
+        const role = session?.user?.role || "user";
         const url = request.nextUrl.pathname;
 
         const isAuthPath = AUTH_PATHS.includes(url);
         const isAdminPath = ADMIN_PROTECTED_PATTERNS.some(p => p.test(url));
         const isUserProtectedPath = PROTECTED_PATTERNS.some(p => p.test(url));
 
+        const adminRoles = ["admin", "superadmin"];
+
         if (session) {
             if (isAuthPath) {
-                const redirectUrl = role === "admin" ? "/admin" : "/";
+                const redirectUrl = adminRoles.includes(role) ? "/admin" : "/";
                 return NextResponse.redirect(new URL(redirectUrl, request.url));
             }
-            if (isAdminPath && role !== "admin") {
+            if (isAdminPath && !adminRoles.includes(role)) {
                 return NextResponse.redirect(new URL("/", request.url));
             }
-            if (isUserProtectedPath && role === "admin") {
+            if (isUserProtectedPath && adminRoles.includes(role)) {
                 return NextResponse.redirect(new URL("/admin", request.url));
             }
         }
