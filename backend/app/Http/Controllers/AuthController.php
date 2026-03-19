@@ -68,16 +68,11 @@ class AuthController extends Controller
                 return $this->sendError('Email already exists', code: 409);
             }
             $validated = $validation->validated();
-            DB::beginTransaction();
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
             ]);
-            $user->profile()->create([
-                'user_id' => $user->id,
-            ]);
-            DB::commit();
             event(new Registered($user));
             return $this->sendResponse($user, 'Registration successful');
         } catch (\Throwable $th) {
