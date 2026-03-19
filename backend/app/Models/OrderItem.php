@@ -15,6 +15,13 @@ class OrderItem extends Model
         'order_id',
         'seat_id',
         'price_at_purchase',
+        'ticket_category_name',
+        'seat_number',
+        'base_price',
+    ];
+    protected $casts = [
+        'price_at_purchase' => 'float',
+        'base_price' => 'float',
     ];
     public function order()
     {

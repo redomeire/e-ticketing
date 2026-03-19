@@ -26,20 +26,17 @@ class OrderController extends Controller
             $page = $request->query('page', 1);
             $orders = DB::table('orders')
                 ->join('order_items', 'orders.id', '=', 'order_items.order_id')
-                ->join('event_seats', 'order_items.seat_id', '=', 'event_seats.id')
-                ->join('event_ticket_categories', 'event_seats.ticket_category_id', '=', 'event_ticket_categories.id')
-                ->join('events', 'event_ticket_categories.event_id', '=', 'events.id')
                 ->select(
                     'orders.id',
                     'orders.invoice_id',
                     'orders.status',
                     'orders.payment_url',
                     'orders.created_at',
+                    'orders.event_name',
+                    'orders.event_start_time',
+                    'orders.event_location',
+                    'orders.total_amount',
                 )
-                ->selectRaw('SUM(order_items.price_at_purchase) as total_amount')
-                ->selectRaw('MIN(events.name) as event_name')
-                ->selectRaw('MIN(events.start_time) as start_time')
-                ->selectRaw('MIN(events.end_time) as end_time')
                 ->selectRaw('COUNT(order_items.id) as total_tickets')
                 ->where('orders.user_id', $user->id)
                 ->whereNot('orders.status', 'expired')
@@ -49,6 +46,9 @@ class OrderController extends Controller
                     'orders.status',
                     'orders.payment_url',
                     'orders.created_at',
+                    'orders.event_name',
+                    'orders.event_start_time',
+                    'orders.event_location'
                 )
                 ->orderBy('orders.created_at', 'desc')
                 ->paginate(10, ['*'], 'page', $page);
@@ -64,26 +64,50 @@ class OrderController extends Controller
     {
         try {
             $user = auth()->user();
+
             $order = Order::where('id', $id)
                 ->where('user_id', $user->id)
                 ->with([
-                    'orderItem:id,order_id,seat_id,price_at_purchase',
-                    'orderItem.seat:id,ticket_category_id,seat_number',
-                    'orderItem.seat.ticketCategory:id,event_id,name,base_price',
-                    'orderItem.seat.ticketCategory.event:id,name,start_time,end_time,location',
+                    'orderItem:id,order_id,seat_id,price_at_purchase,base_price,ticket_category_name,seat_number',
                     'attendee:id,order_id,seat_id,name,email,phone,is_male',
-                    'attendee.seat:id,seat_number',
-                    'attendee.seat.ticketCategory:id,name'
                 ])
-                ->select('id', 'invoice_id', 'status', 'total_amount', 'created_at')
+                ->select(
+                    'id',
+                    'invoice_id',
+                    'status',
+                    'total_amount',
+                    'created_at',
+                    'event_name',
+                    'event_location as location',
+                    'event_start_time as start_time'
+                )
                 ->first();
+
             if (!$order) {
                 return $this->sendError('Order not found', [], 404);
             }
-            return (new OrderDetailResource($order))->additional([
-                'success' => true,
-                'message' => 'Order details retrieved successfully'
-            ]);
+
+            $orderData = $order->toArray();
+            $orderData['total_amount'] = $order->orderItem->sum('price_at_purchase');
+            $orderData['base_amount'] = $order->orderItem->sum('base_price');
+            $orderData['attendees'] = $order->attendee->map(function ($person) use ($order) {
+                $item = $order->orderItem->where('seat_id', $person->seat_id)->first();
+
+                return [
+                    'id' => $person->id,
+                    'name' => $person->name,
+                    'email' => $person->email,
+                    'phone' => $person->phone,
+                    'is_male' => (bool) $person->is_male,
+                    'seat_number' => $item->seat_number ?? null,
+                    'category' => $item->ticket_category_name ?? null,
+                ];
+            });
+            unset($orderData['order_item']);
+            unset($orderData['attendee']);
+
+            return $this->sendResponse($orderData, 'Order details retrieved successfully');
+
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve order details', [
                 $e->getMessage()
@@ -133,11 +157,16 @@ class OrderController extends Controller
                 $application_fee = $subtotal * 0.1;
                 $total_amount = $subtotal + $application_fee;
 
+                $event = $seats->first()->ticketCategory->event;
                 $order = Order::create([
                     'user_id' => $user->id,
                     'invoice_id' => uniqid('INV-'),
                     'status' => 'pending',
                     'total_amount' => $total_amount,
+                    'event_name' => $event->name,
+                    'event_start_time' => $event->start_time,
+                    'event_end_time' => $event->end_time,
+                    'event_location' => $event->location
                 ]);
                 $order_items = [];
                 $attendees_data = [];
@@ -145,13 +174,17 @@ class OrderController extends Controller
 
                 foreach ($validated['attendees'] as $attendee) {
                     $current_seat = $seats->firstWhere('id', $attendee['seat_id']);
+                    $ticket_category = $current_seat->ticketCategory;
 
                     $order_items[] = [
                         'order_id' => $order->id,
                         'seat_id' => $attendee['seat_id'],
-                        'price_at_purchase' => $current_seat->ticketCategory->base_price * 1.1,
+                        'price_at_purchase' => $ticket_category->base_price * 1.1,
                         'created_at' => $now,
                         'updated_at' => $now,
+                        'ticket_category_name' => $ticket_category->name,
+                        'seat_number' => $current_seat->seat_number,
+                        'base_price' => $ticket_category->base_price,
                     ];
 
                     $attendees_data[] = array_merge($attendee, [

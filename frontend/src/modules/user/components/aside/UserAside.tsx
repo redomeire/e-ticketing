@@ -5,8 +5,7 @@ import { usePathname } from "next/navigation";
 
 const sidebarItems = [
     { name: "Profil Biodata", href: "/user/profile" },
-    { name: "Preferensi Akun", href: "/user/settings/change-preferences" },
-    { name: "Ubah Kata Sandi", href: "/user/settings/change-password" },
+    { name: "Preferensi Akun", href: "/user/settings/change-preferences" }
 ];
 
 export default function UserAside() {

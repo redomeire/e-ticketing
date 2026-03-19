@@ -17,8 +17,11 @@ return new class extends Migration {
                 ->onDelete('cascade');
             $table->foreignId('seat_id')
                 ->constrained('event_seats')
-                ->onDelete('cascade');
+                ->onDelete('set null');
+            $table->string('ticket_category_name');
+            $table->string('seat_number');
             $table->decimal('price_at_purchase', 15, 2)->default(0);
+            $table->decimal('base_price', 15, 2)->default(0);
             $table->softDeletesTz('deleted_at', precision: 0);
             $table->timestamps();
         });
