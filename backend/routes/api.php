@@ -16,12 +16,12 @@ Route::prefix('v1')->group(function () {
             });
         Route::middleware(['guest'])
             ->group(function () {
-                Route::post('register', [AuthController::class, 'register'])->name('register');
-                Route::post('login', [AuthController::class, 'login'])->name('login');
+                Route::post('register', [AuthController::class, 'register'])->middleware('throttle:register')->name('register');
+                Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login')->name('login');
                 Route::get('verify-email/{id}/{hash}', [AuthController::class, 'verifyEmail'])->name('verification.verify');
-                Route::post('/send-verification-email', [AuthController::class, 'sendVerificationEmail'])->name('verification.send');
-                Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('password.email');
-                Route::post('/reset-password/{token}', [AuthController::class, 'resetPassword'])->name('password.update');
+                Route::post('/send-verification-email', [AuthController::class, 'sendVerificationEmail'])->middleware('throttle:send-verification-email')->name('verification.send');
+                Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->middleware('throttle:password-forgot')->name('password.email');
+                Route::post('/reset-password/{token}', [AuthController::class, 'resetPassword'])->middleware('throttle:password-reset')->name('password.update');
             });
     });
 
