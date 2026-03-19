@@ -53,7 +53,7 @@ export function useAdminGetEvents(
     options?: Omit<UseQueryOptions<unknown, unknown, IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>, 'queryKey'>
 ) {
     return useQuery({
-        queryKey: ["admin-events"],
+        queryKey: ["admin-events", req.options],
         queryFn: () => eventRepository.adminGetEvents(req),
         ...options,
     });
@@ -109,11 +109,11 @@ export function useAdminToggleEventActive(
         mutationKey: ["admin-toggle-event-active", req.payload],
         mutationFn: (payload: { id: number; is_active: boolean }) => eventRepository.adminToggleEventActive(payload.id, { payload }),
         onMutate: async (newPayload: { id: number; is_active: boolean }) => {
-            await queryClient.cancelQueries({ queryKey: ["admin-events"] });
+            await queryClient.cancelQueries({ queryKey: ["admin-events", req.options] });
 
-            const previous = queryClient.getQueryData<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>(["admin-events"]);
+            const previous = queryClient.getQueryData<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>(["admin-events", req.options]);
 
-            queryClient.setQueryData<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>(['admin-events'], (old) => {
+            queryClient.setQueryData<IHttpResponse<IPaginatedData<IAdminGetEventsResponse>>>(['admin-events', req.options], (old) => {
                 if (!old) return old;
                 const updatedEvents = old.data.data.map(event =>
                     event.id === newPayload.id
@@ -132,12 +132,7 @@ export function useAdminToggleEventActive(
             return { previous };
         },
         onError: (err, newPayload, context) => {
-            queryClient.setQueryData(["admin-events"], context);
-        },
-        onSettled: () => {
-            queryClient.invalidateQueries({
-                queryKey: ["admin-events"]
-            });
+            queryClient.setQueryData(["admin-events", req.options], context);
         },
         ...options,
     });
@@ -174,6 +169,23 @@ export function useAdminCreateEventCategory(
             eventRepository.adminCreateEventCategory({ payload }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["event-categories"] });
+        },
+        ...options,
+    });
+}
+
+export function useAdminDeleteEvent(
+    req: IHttpRequest<{ id: number }>,
+    options?: Omit<UseMutationOptions<IHttpResponse<{}>, unknown, { id: number }>, 'mutationKey'>
+) {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationKey: ["admin-delete-event", req.payload],
+        mutationFn: (payload: { id: number }) => eventRepository.adminDeleteEvent(payload.id, { payload }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: ["admin-events"]
+            });
         },
         ...options,
     });

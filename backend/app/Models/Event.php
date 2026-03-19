@@ -34,11 +34,20 @@ class Event extends Model
     protected static function booted()
     {
         static::creating(function ($event) {
-            $base_slug = Str::slug($event->name);
-            $short_slug = Str::limit($base_slug, 40, '');
-            $unique_suffix = strtolower(Str::random(5));
-            $event->slug = "{$short_slug}-{$unique_suffix}";
+            $event->slug = $event->generateUniqueSlug($event->name);
         });
+        static::updating(function ($event) {
+            if ($event->isDirty('name')) {
+                $event->slug = $event->generateUniqueSlug($event->name);
+            }
+        });
+    }
+    private function generateUniqueSlug($name)
+    {
+        $base_slug = Str::slug($name);
+        $short_slug = Str::limit($base_slug, 40, '');
+        $unique_suffix = strtolower(Str::random(5));
+        return "{$short_slug}-{$unique_suffix}";
     }
     public function getRouteKeyName()
     {

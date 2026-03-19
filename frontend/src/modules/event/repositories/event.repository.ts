@@ -174,6 +174,17 @@ const adminCreateEventCategory = async (
     return response.data;
 }
 
+const adminDeleteEvent = async (
+    id: number,
+    params: IHttpRequest<{}>
+): Promise<IHttpResponse<{}>> => {
+    const response = await api.delete(
+        `/event/admin/${id}`,
+        params.options
+    );
+    return response.data;
+}
+
 const eventRepository = {
     getEvents,
     getEventDetail,
@@ -184,7 +195,8 @@ const eventRepository = {
     adminToggleEventActive,
     adminUpdateSeats,
     adminCreateEventCategory,
-    adminCreateEvent
+    adminCreateEvent,
+    adminDeleteEvent
 }
 
 export type {
