@@ -35,7 +35,7 @@ class ReleaseExpiredOrder extends Command
             DB::transaction(function () use ($threshold) {
                 $expired_orders = Order::where('status', 'pending')
                     ->where('created_at', '<', $threshold)
-                    ->with('orderItem') // Gunakan plural jika relasinya hasMany
+                    ->with('orderItem')
                     ->get();
 
                 if ($expired_orders->isNotEmpty()) {

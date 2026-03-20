@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { UseFormReturn } from "react-hook-form";
 import { BookingFormData } from "@/modules/event/schema/createAttendee.schema";
+import { useSession } from "next-auth/react";
 
 interface Props {
     selectedSeats: {
@@ -17,6 +18,18 @@ interface Props {
 }
 
 export default function SelectSeatForm({ selectedSeats, form }: Props) {
+    const { data } = useSession();
+    const handleCheckedChange = (checked: boolean) => {
+        if (checked) {
+            if (data && data.user) {
+                form.setValue(`attendees.0.name`, data.user.name || "");
+                form.setValue(`attendees.0.email`, data.user.email || "");
+            }
+        } else {
+            form.setValue(`attendees.0.name`, "");
+            form.setValue(`attendees.0.email`, "");
+        }
+    }
     return (
         <FormProviderWrapper form={form}>
             <form className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -30,12 +43,17 @@ export default function SelectSeatForm({ selectedSeats, form }: Props) {
                                 </div>
                                 <span className="font-black text-[#002558] text-lg">Kursi {seat.seat_number}</span>
                             </div>
-                            <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-xl">
-                                <Checkbox id={`use-my-data-${seat.id}`} />
-                                <Label htmlFor={`use-my-data-${seat.id}`} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest cursor-pointer">
-                                    Gunakan Data Pribadi
-                                </Label>
-                            </div>
+                            {index === 0 && (
+                                <div className="flex items-center space-x-2 bg-gray-50 px-4 py-2 rounded-xl">
+                                    <Checkbox
+                                        id={`use-my-data-${seat.id}`}
+                                        onCheckedChange={handleCheckedChange}
+                                    />
+                                    <Label htmlFor={`use-my-data-${seat.id}`} className="text-[10px] font-bold text-gray-400 uppercase tracking-widest cursor-pointer">
+                                        Gunakan Data Pribadi
+                                    </Label>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -130,7 +130,7 @@ function PageContent() {
                                                     <div className="flex flex-wrap gap-y-2 gap-x-8">
                                                         <div className="flex items-center gap-2.5 text-xs font-bold text-gray-400 uppercase tracking-tighter">
                                                             <HugeiconsIcon icon={Calendar03Icon} size={16} className="text-blue-500" />
-                                                            {formatDate(order.start_time, { hour: undefined, minute: undefined })}
+                                                            {formatDate(order.event_start_time, { hour: undefined, minute: undefined })}
                                                         </div>
                                                         <div className="flex items-center gap-2.5 text-xs font-bold text-gray-400 uppercase tracking-tighter">
                                                             <HugeiconsIcon icon={Ticket01Icon} size={16} className="text-blue-500" />

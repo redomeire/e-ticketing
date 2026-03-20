@@ -4,12 +4,16 @@ import orderRepository, { ICheckoutRequest, ICheckoutResponse, IGetOrderHistoryD
 import { IOrderHistory } from "../types/order";
 
 export function useCheckout(
+    req: IHttpRequest<ICheckoutRequest>,
     options?: Omit<UseMutationOptions<IHttpResponse<ICheckoutResponse>, unknown, ICheckoutRequest>, 'mutationKey'>
 ) {
     const queryClient = useQueryClient();
     return useMutation({
         mutationKey: ["checkout"],
-        mutationFn: (payload: ICheckoutRequest) => orderRepository.checkout({ payload }),
+        mutationFn: (payload: ICheckoutRequest) => orderRepository.checkout({
+            payload,
+            options: req.options
+        }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["checkout"] });
         },
