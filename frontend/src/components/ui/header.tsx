@@ -138,17 +138,25 @@ const Header = () => {
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     {!isAdmin && (
-                                        <Link href="/order/history">
-                                            <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
-                                                <HugeiconsIcon icon={Clock01Icon} size={18} />
-                                                <span>Riwayat Pemesanan</span>
-                                            </DropdownMenuItem>
-                                        </Link>
+                                        <>
+                                            <Link href="/order/history">
+                                                <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
+                                                    <HugeiconsIcon icon={Clock01Icon} size={18} />
+                                                    <span>Riwayat Pemesanan</span>
+                                                </DropdownMenuItem>
+                                            </Link>
+                                            <Link href={`${profileBaseRoute}/profile`}>
+                                                <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
+                                                    <HugeiconsIcon icon={UserIcon} size={18} />
+                                                    <span>Profil {isAdmin ? "Admin" : "Saya"}</span>
+                                                </DropdownMenuItem>
+                                            </Link>
+                                        </>
                                     )}
-                                    <Link href={`${profileBaseRoute}/profile`}>
+                                    <Link href="/admin">
                                         <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
                                             <HugeiconsIcon icon={UserIcon} size={18} />
-                                            <span>Profil {isAdmin ? "Admin" : "Saya"}</span>
+                                            <span>Dashboard</span>
                                         </DropdownMenuItem>
                                     </Link>
                                     <Link href={`${profileBaseRoute}/settings`}>
