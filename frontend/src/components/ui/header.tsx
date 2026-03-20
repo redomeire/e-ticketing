@@ -137,7 +137,7 @@ const Header = () => {
                                         <p className="text-xs font-medium leading-none text-muted-foreground">{session?.user.email}</p>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
-                                    {!isAdmin && (
+                                    {!isAdmin ? (
                                         <>
                                             <Link href="/order/history">
                                                 <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
@@ -152,19 +152,22 @@ const Header = () => {
                                                 </DropdownMenuItem>
                                             </Link>
                                         </>
+                                    ) : (
+                                        <>
+                                            <Link href="/admin">
+                                                <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
+                                                    <HugeiconsIcon icon={UserIcon} size={18} />
+                                                    <span>Dashboard</span>
+                                                </DropdownMenuItem>
+                                            </Link>
+                                            <Link href={`${profileBaseRoute}/settings`}>
+                                                <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
+                                                    <HugeiconsIcon icon={Settings} size={18} />
+                                                    <span>Pengaturan</span>
+                                                </DropdownMenuItem>
+                                            </Link>
+                                        </>
                                     )}
-                                    <Link href="/admin">
-                                        <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
-                                            <HugeiconsIcon icon={UserIcon} size={18} />
-                                            <span>Dashboard</span>
-                                        </DropdownMenuItem>
-                                    </Link>
-                                    <Link href={`${profileBaseRoute}/settings`}>
-                                        <DropdownMenuItem className="cursor-pointer gap-2 py-2.5 font-bold">
-                                            <HugeiconsIcon icon={Settings} size={18} />
-                                            <span>Pengaturan</span>
-                                        </DropdownMenuItem>
-                                    </Link>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem
                                         className="cursor-pointer gap-2 py-2.5 text-red-600 font-bold focus:text-red-600 focus:bg-red-50"
