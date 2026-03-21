@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\OrderDetailResource;
-use App\Jobs\RetrieveCheckoutJob;
-use App\Models\EventSeat;
 use App\Models\Order;
-use App\Services\PaymentService;
+use App\Models\EventSeat;
 use Illuminate\Http\Request;
+use App\Services\PaymentService;
+use App\Jobs\RetrieveCheckoutJob;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
+use App\Http\Resources\OrderDetailResource;
 
 class OrderController extends Controller
 {
@@ -24,6 +25,15 @@ class OrderController extends Controller
         try {
             $user = auth()->user();
             $page = $request->query('page', 1);
+            $signature = md5(serialize([
+                'user_id' => $user->id,
+                'page' => $page,
+            ]));
+            $cache_key = "orders:{$user->id}:{$signature}";
+            $cached_data = Cache::tags(["orders_{$user->id}"])->get($cache_key);
+            if ($cached_data) {
+                return $this->sendResponse($cached_data, 'Orders retrieved successfully (from cache)');
+            }
             $orders = DB::table('orders')
                 ->join('order_items', 'orders.id', '=', 'order_items.order_id')
                 ->select(
@@ -53,6 +63,7 @@ class OrderController extends Controller
                 ->orderBy('orders.created_at', 'desc')
                 ->paginate(10, ['*'], 'page', $page);
 
+            Cache::tags(["orders_{$user->id}"])->put($cache_key, $orders, now()->addMinutes(10));
             return $this->sendResponse($orders, 'Orders retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve orders', [

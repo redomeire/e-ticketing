@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendee;
 use App\Models\Event;
-use App\Models\EventCategory;
+use App\Models\Attendee;
 use App\Models\EventSeat;
-use App\Models\EventTicketCategory;
-use App\Services\ImageUploadService;
 use Illuminate\Http\Request;
+use App\Models\EventCategory;
 use Illuminate\Support\Facades\DB;
+use App\Models\EventTicketCategory;
 use Illuminate\Support\Facades\Log;
+use App\Services\ImageUploadService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
@@ -38,6 +39,19 @@ class EventController extends Controller
             $page = $validated['page'] ?? 1;
             $search = $validated['search'];
 
+            $signature = md5(serialize([
+                'page' => $page,
+                'limit' => $limit,
+                'search' => $search,
+            ]));
+            $cache_key = "events:all:{$signature}";
+            $cached_data = Cache::tags(['events_all'])->get($cache_key);
+
+            if ($cached_data) {
+                Log::info("Cache hit for key: {$cache_key}");
+                return $this->sendResponse($cached_data, 'Events retrieved successfully (from cache)');
+            }
+
             $query = Event::with(['ticketCategories:id,event_id,name,base_price,quota'])
                 ->select('id', 'name', 'start_time', 'end_time', 'location', 'slug', 'is_active', 'cover_image_url')
                 ->where('is_active', true);
@@ -45,6 +59,7 @@ class EventController extends Controller
                 $query->where('name', 'ILIKE', "%$search%");
             }
             $events = $query->paginate($limit, ['*'], 'page', $page);
+            Cache::tags(['events_all'])->put($cache_key, $events, now()->addMinutes(10));
             return $this->sendResponse($events, 'Events retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Error retrieving events', ['error' => $e->getMessage()], 500);
@@ -183,7 +198,7 @@ class EventController extends Controller
             if ($totalSeatsInPayload > $maxCapacity) {
                 throw new \Exception("Total seats exceed grid capacity.");
             }
-
+            Cache::tags(['events_all'])->flush();
             DB::commit();
 
             return $this->sendResponse(
@@ -258,6 +273,7 @@ class EventController extends Controller
                 );
                 $event->update(['cover_image_url' => $uploaded_file->result->url]);
             }
+            Cache::tags(['events_all'])->flush();
             DB::commit();
 
             return $this->sendResponse($event->load('categories'), 'Event metadata updated successfully');
@@ -298,6 +314,7 @@ class EventController extends Controller
                 return $this->sendError('event not found', [], 404);
             }
             $event->delete();
+            Cache::tags(['events_all'])->flush();
             return $this->sendResponse($event, 'Event deleted successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to delete event', [
