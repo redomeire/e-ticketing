@@ -218,7 +218,6 @@ export default function CreateEventPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="p-10 space-y-8">
-                            {/* TODO: dropzone won't accept jpg format */}
                             <Dropzone
                                 name="cover_image"
                                 withValidation

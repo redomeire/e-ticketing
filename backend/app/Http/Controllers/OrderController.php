@@ -30,7 +30,7 @@ class OrderController extends Controller
                 'page' => $page,
             ]));
             $cache_key = "orders:{$user->id}:{$signature}";
-            $cached_data = Cache::tags(["orders_{$user->id}"])->get($cache_key);
+            $cached_data = Cache::tags(["orders"])->get($cache_key);
             if ($cached_data) {
                 return $this->sendResponse($cached_data, 'Orders retrieved successfully (from cache)');
             }
@@ -63,7 +63,7 @@ class OrderController extends Controller
                 ->orderBy('orders.created_at', 'desc')
                 ->paginate(10, ['*'], 'page', $page);
 
-            Cache::tags(["orders_{$user->id}"])->put($cache_key, $orders, now()->addMinutes(10));
+            Cache::tags(["orders"])->put($cache_key, $orders, now()->addMinutes(10));
             return $this->sendResponse($orders, 'Orders retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve orders', [
