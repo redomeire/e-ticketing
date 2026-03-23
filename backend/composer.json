@@ -16,6 +16,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
         "predis/predis": "^3.4",
+        "spatie/laravel-backup": "^10.2",
         "xendit/xendit-php": "^7.0"
     },
     "require-dev": {
