@@ -1,9 +1,11 @@
 services:
   app:
+    env_file:
+      - .env.docker
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: php artisan octane:frankenphp --workers=1 --max-requests=1
+    entrypoint: php artisan octane:frankenphp --workers=3 --max-requests=500
     container_name: e-ticketing-app
     restart: unless-stopped
     ports:
@@ -11,6 +13,8 @@ services:
       - "443:443"
     volumes:
       - .:/app
+      - storage_data:/app/storage
+      - cache_data:/app/bootstrap/cache
     environment:
       - CADDY_GLOBAL_OPTIONS="auto_https off"
       - APP_ENV=${APP_ENV:-local}
@@ -54,3 +58,7 @@ services:
 networks:
   e-ticketing-network:
     driver: bridge
+
+volumes:
+  storage_data:
+  cache_data:

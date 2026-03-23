@@ -1,5 +1,7 @@
 FROM dunglas/frankenphp:latest AS base
 
+RUN apt-get update && apt-get install -y libpq-dev postgresql-client && apt-get clean
+
 RUN install-php-extensions \
     pdo_pgsql \
     redis \
