@@ -24,6 +24,7 @@ export default function SeatGrid({
     maxRowIndex
 }: SeatGridProps) {
     const categoryThemes = useMemo(() => {
+        if (!seats) return {};
         const themes: Record<string, ReturnType<typeof generateColor>> = {};
         seats.forEach(seat => {
             const name = seat.category_name;

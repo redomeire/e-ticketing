@@ -38,10 +38,12 @@ function SuccessContent() {
                 </div>
             </div>
             <div className="flex flex-col gap-3">
-                <Button className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-lg shadow-lg active:scale-95 transition-all gap-2">
-                    <HugeiconsIcon icon={Ticket} size={20} />
-                    Lihat Tiket Saya
-                </Button>
+                <Link href="/order/history" className="w-full">
+                    <Button className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl text-lg shadow-lg active:scale-95 transition-all gap-2">
+                        <HugeiconsIcon icon={Ticket} size={20} />
+                        Lihat Tiket Saya
+                    </Button>
+                </Link>
                 <div className="grid grid-cols-2 gap-3">
                     <Button variant="outline" asChild className="h-12 border-gray-200 font-bold rounded-xl gap-2">
                         <Link href="/">

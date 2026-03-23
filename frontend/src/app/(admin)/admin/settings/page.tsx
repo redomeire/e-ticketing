@@ -39,7 +39,7 @@ export default function SettingsPage() {
                         </div>
                         <div className="space-y-2">
                             <Label className="text-sm font-bold text-slate-700">Email Utama</Label>
-                            <Input defaultValue="redo@happymusic.com" className="h-11 rounded-xl border-slate-200" />
+                            <Input defaultValue="redo@user.com" className="h-11 rounded-xl border-slate-200" />
                         </div>
                     </div>
                     <div className="pt-6 border-t border-slate-100 space-y-4">

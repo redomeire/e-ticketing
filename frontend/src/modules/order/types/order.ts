@@ -6,7 +6,7 @@ export interface IOrderHistory {
     created_at: string;
     total_amount: number;
     event_name: string;
-    start_time: string;
-    end_time: string;
+    event_start_time: string;
+    event_location: string;
     total_tickets: number;
 }

@@ -25,9 +25,6 @@ interface Props {
     event: IGetEventDetailResponse;
 }
 
-// TODO: fix error 
-// 1. If you change previously assigned seat to another category, it will create a new seat instead of updating the existing one.
-
 export default function UpdateEventForm({ event }: Props) {
     const router = useRouter();
 

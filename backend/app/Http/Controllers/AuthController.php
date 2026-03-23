@@ -120,7 +120,6 @@ class AuthController extends Controller
             return $this->sendError('Resend verification email failed', $th->getMessage(), code: 500);
         }
     }
-    // TODO: Prevent admin from resetting password for their own account
     public function forgotPassword(Request $request)
     {
         try {
@@ -134,6 +133,9 @@ class AuthController extends Controller
             $found_user = User::where('email', $validated['email'])->first();
             if (!$found_user) {
                 return $this->sendError('User not found', code: 404);
+            }
+            if (in_array($found_user->role, ['admin', 'superadmin'])) {
+                return $this->sendError('Password reset is not allowed', code: 403);
             }
             $status = Password::sendResetLink(
                 ['email' => $validated['email']]
@@ -162,6 +164,9 @@ class AuthController extends Controller
             $status = Password::reset(
                 $validated,
                 function ($user, $password) {
+                    if ($user->role === 'admin' && $user->role === 'superadmin') {
+                        throw new \Exception('password reset is not allowed');
+                    }
                     $user->forceFill([
                         'password' => Hash::make($password),
                     ])->setRememberToken(Str::random(60));

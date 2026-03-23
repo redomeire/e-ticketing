@@ -65,14 +65,12 @@ export default function AdminDashboard() {
     const [timeRange, setTimeRange] = useState("week");
 
     return (
-        <div className="space-y-8 p-6 lg:p-10 bg-slate-50/30 font-sans">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-8 bg-slate-50/30 font-sans">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
-                        Ringkasan Eksekutif
-                    </h1>
-                    <p className="text-sm text-slate-500 mt-1">
-                        Pantau performa platform Happy Music secara real-time.
+                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Ringkasan</h1>
+                    <p className="text-base text-slate-500 mt-2 font-medium">
+                        Pantau performa platform event secara real-time.
                     </p>
                 </div>
             </div>
