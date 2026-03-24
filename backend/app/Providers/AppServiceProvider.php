@@ -11,6 +11,11 @@ use App\Observers\UserObserver;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Filesystem\FilesystemAdapter;
+use League\Flysystem\Filesystem;
+use Spatie\Dropbox\Client as DropboxClient;
+use Spatie\FlysystemDropbox\DropboxAdapter;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -44,6 +49,17 @@ class AppServiceProvider extends ServiceProvider
         });
         RateLimiter::for('send-verification-email', function () {
             return Limit::perMinutes(30, 3)->by(request()->email ?: request()->ip());
+        });
+        Storage::extend('dropbox', function ($app, $config) {
+             $adapter = new DropboxAdapter(new DropboxClient(
+                $config['authorization_token']
+            ));
+ 
+            return new FilesystemAdapter(
+                new Filesystem($adapter, $config),
+                $adapter,
+                $config
+            );
         });
     }
 }
