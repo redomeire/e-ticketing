@@ -272,8 +272,8 @@ class EventController extends Controller
                 );
                 $event->update(['cover_image_url' => $uploaded_file->result->url]);
             }
-            Cache::tags(['events_all'])->flush();
             DB::commit();
+            Cache::tags(['events_all'])->flush();
 
             return $this->sendResponse($event->load('categories'), 'Event metadata updated successfully');
         } catch (\Exception $e) {
@@ -580,6 +580,7 @@ class EventController extends Controller
             $event->ticketCategories()->whereNotIn('id', $activeCategoryIds)->delete();
 
             DB::commit();
+            Cache::tags(["event_seats"])->flush();
             Log::info("TRANSACTION COMMITTED SUCCESSFULLY.");
 
             return $this->sendResponse(null, 'Layout updated successfully.');

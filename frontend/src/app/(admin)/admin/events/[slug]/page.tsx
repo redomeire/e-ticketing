@@ -40,18 +40,24 @@ export default function EventDetailPage() {
     return (
         <>
             <QueryStateHandler isPending={isLoadingData} data={event}>
-                <UpdateEventForm
-                    event={event!}
-                />
+                {
+                    event && (
+                        <UpdateEventForm
+                            event={event!}
+                        />
+                    )
+                }
             </QueryStateHandler>
             <QueryStateHandler isPending={isLoadingSeat} data={seats}>
-                <UpdateSeatsForm
-                    event={event!}
-                    isLoadingSeat={isLoadingSeat}
-                    max_column={event?.max_column || 0}
-                    max_row={event?.max_row || 0}
-                    seats={seats! || []}
-                />
+                {
+                    seats && seats.seats.length && event && (
+                        <UpdateSeatsForm
+                            event={event!}
+                            isLoadingSeat={isLoadingSeat}
+                            seats={seats}
+                        />
+                    )
+                }
             </QueryStateHandler>
         </>
     );
