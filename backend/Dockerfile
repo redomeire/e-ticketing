@@ -1,4 +1,4 @@
-FROM docker.io/library/dunglas/frankenphp:latest AS base
+FROM docker.io/dunglas/frankenphp:latest AS base
 
 RUN apt-get update && apt-get install -y libpq-dev postgresql-client && apt-get clean
 
