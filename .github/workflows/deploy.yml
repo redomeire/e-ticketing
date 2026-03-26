@@ -24,7 +24,7 @@ jobs:
           echo "Pulling latest code..."
           git pull origin main
 
-          cd /backend
+          cd backend
           echo "Building and Restarting Services..."
           podman-compose up -d --build --remove-orphans
 
