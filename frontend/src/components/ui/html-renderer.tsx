@@ -1,4 +1,4 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from 'sanitize-html';
 
 interface Props {
     html: string;
@@ -6,7 +6,7 @@ interface Props {
 }
 
 export default function HTMLRenderer({ html, className }: Props) {
-    const sanitizedHtml = DOMPurify.sanitize(html);
+    const sanitizedHtml = sanitizeHtml(html);
 
     return (
         <div

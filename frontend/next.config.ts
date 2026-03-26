@@ -3,11 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
-  transpilePackages: [
-    "jsdom",
-    "html-encoding-sniffer",
-    "@exodus/bytes"
-  ],
   images: {
     remotePatterns: [
       {
