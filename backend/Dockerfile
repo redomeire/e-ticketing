@@ -24,6 +24,7 @@ ENV FRANKENPHP_CONFIG="worker ./public/index.php"
 COPY . .
 RUN composer install
 RUN php artisan config:clear && php artisan optimize
+RUN php artisan migrate
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]
 
 FROM base AS production
@@ -37,4 +38,6 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 
+RUN php artisan config:clear && php artisan optimize
+RUN php artisan migrate
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]
