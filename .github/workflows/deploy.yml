@@ -26,6 +26,10 @@ jobs:
           git pull origin main
 
           cd backend
+          echo "Cleaning up old containers and images..."
+          podman-compose down --volumes --remove-orphans || true
+          podman rm -f e-ticketing-app e-ticketing-worker e-ticketing-scheduler e-ticketing-postgres e-ticketing-redis || true
+
           echo "Building and Restarting Services..."
           podman-compose up -d --build --remove-orphans
 
