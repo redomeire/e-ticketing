@@ -24,11 +24,12 @@ jobs:
           echo "Pulling latest code..."
           git pull origin main
 
+          cd /backend
           echo "Building and Restarting Services..."
           podman-compose up -d --build --remove-orphans
 
           echo "Running Database Migrations..."
-          podman exec e-ticketing-app php artisan migrate
+          podman exec e-ticketing-app php artisan migrate --force
 
           echo "Cleaning up old images..."
           podman image prune -af
