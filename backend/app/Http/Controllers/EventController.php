@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Attendee;
 use App\Models\Event;
-use App\Models\EventCategory;
+use App\Models\Attendee;
 use App\Models\EventSeat;
-use App\Models\EventTicketCategory;
-use App\Services\ImageUploadService;
 use Illuminate\Http\Request;
+use App\Models\EventCategory;
 use Illuminate\Support\Facades\DB;
+use App\Models\EventTicketCategory;
 use Illuminate\Support\Facades\Log;
+use App\Services\ImageUploadService;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 
 class EventController extends Controller
@@ -20,7 +21,6 @@ class EventController extends Controller
     {
         $this->image_upload_service = $imageUploadService;
     }
-    // TODO : implement caching for this endpoint
     public function all(Request $request)
     {
         try {
@@ -38,13 +38,27 @@ class EventController extends Controller
             $page = $validated['page'] ?? 1;
             $search = $validated['search'];
 
-            $query = Event::with(['ticketCategories:id,event_id,name,base_price,quota'])
-                ->select('id', 'name', 'start_time', 'end_time', 'location', 'slug', 'is_active', 'cover_image_url')
+            $signature = md5(serialize([
+                'page' => $page,
+                'limit' => $limit,
+                'search' => $search,
+            ]));
+            $cache_key = "events:all:{$signature}";
+            $cached_data = Cache::tags(['events_all'])->get($cache_key);
+
+            if ($cached_data) {
+                Log::info("Cache hit for key: {$cache_key}");
+                return $this->sendResponse($cached_data, 'Events retrieved successfully (from cache)');
+            }
+
+            $query = Event::with(['ticketCategories:id,event_id,name,base_price'])
+                ->select('id', 'name', 'start_time', 'location', 'slug', 'is_active', 'cover_image_url')
                 ->where('is_active', true);
             if ($search) {
                 $query->where('name', 'ILIKE', "%$search%");
             }
             $events = $query->paginate($limit, ['*'], 'page', $page);
+            Cache::tags(['events_all'])->put($cache_key, $events, now()->addMinutes(10));
             return $this->sendResponse($events, 'Events retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Error retrieving events', ['error' => $e->getMessage()], 500);
@@ -54,7 +68,7 @@ class EventController extends Controller
     {
         try {
             $event = Event::with([
-                'ticketCategories.seats:id,ticket_category_id,is_available,locked_until,seat_number',
+                'ticketCategories.seats:id,ticket_category_id,is_available',
                 'categories:id,name',
             ])
                 ->with([
@@ -70,7 +84,7 @@ class EventController extends Controller
                         ]);
                     }
                 ])
-                ->select('id', 'name', 'description', 'is_active', 'start_time', 'end_time', 'location', 'slug', 'cover_image_url', 'terms_and_conditions', 'max_row', 'max_column')
+                ->select('id', 'name', 'description', 'is_active', 'start_time', 'end_time', 'location', 'slug', 'cover_image_url', 'terms_and_conditions')
                 ->where('slug', $slug)
                 ->first();
             if (!$event) {
@@ -183,7 +197,7 @@ class EventController extends Controller
             if ($totalSeatsInPayload > $maxCapacity) {
                 throw new \Exception("Total seats exceed grid capacity.");
             }
-
+            Cache::tags(['events_all'])->flush();
             DB::commit();
 
             return $this->sendResponse(
@@ -259,6 +273,7 @@ class EventController extends Controller
                 $event->update(['cover_image_url' => $uploaded_file->result->url]);
             }
             DB::commit();
+            Cache::tags(['events_all'])->flush();
 
             return $this->sendResponse($event->load('categories'), 'Event metadata updated successfully');
         } catch (\Exception $e) {
@@ -298,6 +313,7 @@ class EventController extends Controller
                 return $this->sendError('event not found', [], 404);
             }
             $event->delete();
+            Cache::tags(['events_all'])->flush();
             return $this->sendResponse($event, 'Event deleted successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to delete event', [
@@ -355,13 +371,18 @@ class EventController extends Controller
             ], 500);
         }
     }
-    // TODO : implement caching for this endpoint
     public function getSeats($slug)
     {
         try {
             $event = Event::where('slug', $slug)->first();
             if (!$event)
                 return $this->sendError('Event not found', [], 404);
+            $cache_key = "event:seats:{$event->id}";
+            $cached_data = Cache::tags(["event_seats"])->get($cache_key);
+            if ($cached_data) {
+                Log::info("Cache hit for key: {$cache_key}");
+                return $this->sendResponse(json_decode($cached_data), 'Seats retrieved successfully (from cache)');
+            }
             $seats = DB::table('event_seats as e')
                 ->join('event_ticket_categories as tc', 'e.ticket_category_id', '=', 'tc.id')
                 ->where('tc.event_id', $event->id)
@@ -380,11 +401,14 @@ class EventController extends Controller
                 ->orderBy('e.column_index')
                 ->get();
 
-            return $this->sendResponse([
+            $response_payload = [
                 'max_row' => (int) $event->max_row,
                 'max_column' => (int) $event->max_column,
                 'seats' => $seats,
-            ], 'Seats retrieved successfully');
+            ];
+
+            Cache::tags(["event_seats"])->put($cache_key, json_encode($response_payload), now()->addMinutes(5));
+            return $this->sendResponse($response_payload, 'Seats retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve seats', [
                 'error' => $e->getMessage(),
@@ -556,6 +580,7 @@ class EventController extends Controller
             $event->ticketCategories()->whereNotIn('id', $activeCategoryIds)->delete();
 
             DB::commit();
+            Cache::tags(["event_seats"])->flush();
             Log::info("TRANSACTION COMMITTED SUCCESSFULLY.");
 
             return $this->sendResponse(null, 'Layout updated successfully.');

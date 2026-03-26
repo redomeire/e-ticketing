@@ -1,12 +1,12 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
+use App\Http\Middleware\CheckUserActive;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\UserController;
-use App\Http\Middleware\CheckUserActive;
-use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -45,7 +45,7 @@ Route::prefix('v1')->group(function () {
             });
             Route::get('/attendee', [EventController::class, 'getAttendees'])->name('event.attendees');
             Route::get('/{slug}/seats', [EventController::class, 'getSeats'])->name('event.seats');
-            Route::post('/seats/checkout', [OrderController::class, 'checkout'])->name('event.seats.checkout');
+            Route::post('/seats/checkout', [OrderController::class, 'checkout'])->middleware('use-idempotency-key')->name('event.seats.checkout');
 
             Route::prefix('admin')->group(function () {
                 Route::middleware(['abilities:event-manage'])->group(function () {

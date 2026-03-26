@@ -7,6 +7,7 @@ import { Calendar, DashboardBrowsingIcon, WhatsappIcon, Facebook, Twitter, Info,
 import { HugeiconsIcon } from "@hugeicons/react";
 import { IEvent, IEventCategory } from "../../types/event";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface Props {
     event: IEvent & { categories: IEventCategory[] };
@@ -14,8 +15,13 @@ interface Props {
 }
 
 export default function EventDetailSummaryCard({ event, priceStartFrom }: Props) {
+    const { data } = useSession();
     const router = useRouter();
     const handleBuyTicket = () => {
+        if (data?.user.role === "admin") {
+            router.push(`/admin/events/${event.slug}`);
+            return;
+        }
         router.push(`/event/${event.slug}/order`);
     }
     return (
@@ -53,7 +59,7 @@ export default function EventDetailSummaryCard({ event, priceStartFrom }: Props)
                     onClick={handleBuyTicket}
                     className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg font-bold shadow-lg shadow-blue-200"
                 >
-                    Beli Tiket Sekarang
+                    {data?.user.role === "admin" ? "Atur Event" : "Beli Tiket Sekarang"}
                 </Button>
                 <div>
                     <h2 className="mt-5 mb-3 text-xl font-bold drop-shadow-sm">

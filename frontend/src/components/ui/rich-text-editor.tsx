@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import { useEditor, EditorContent, Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Underline from "@tiptap/extension-underline";
 import { Emoji, gitHubEmojis } from "@tiptap/extension-emoji";
 import { useFormContext, Controller } from "react-hook-form";
 import {
@@ -173,7 +172,6 @@ const BaseTextEditor = ({ value, onChange, error, placeholder }: BaseEditorProps
     const editor = useEditor({
         extensions: [
             StarterKit,
-            Underline,
             Emoji.configure({
                 emojis: gitHubEmojis,
                 enableEmoticons: true,

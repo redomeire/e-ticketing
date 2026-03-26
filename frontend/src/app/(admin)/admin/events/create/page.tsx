@@ -226,7 +226,7 @@ export default function CreateEventPage() {
                                     accept: {
                                         "image/svg+xml": [],
                                         "image/png": [],
-                                        "image/jpg": [],
+                                        "image/jpeg": [],
                                         "image/gif": [],
                                     },
                                     maxSize: 3 * 1024 * 1024,

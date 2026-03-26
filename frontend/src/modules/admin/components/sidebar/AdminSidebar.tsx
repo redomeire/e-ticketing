@@ -49,7 +49,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                                 <HugeiconsIcon icon={Ticket} size={16} />
                             </div>
                             <div className="grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-black uppercase italic tracking-tighter text-[#002558]">Happy Admin</span>
+                                <span className="truncate font-black uppercase text-[#002558]">E-Ticketing</span>
                                 <span className="truncate text-[10px] font-bold text-blue-600 uppercase">Management</span>
                             </div>
                         </SidebarMenuButton>

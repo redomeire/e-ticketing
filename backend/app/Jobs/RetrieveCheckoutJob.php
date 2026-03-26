@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -76,6 +77,7 @@ class RetrieveCheckoutJob implements ShouldQueue
                     Log::warning("Order #{$order->invoice_id} released due to {$status_upper}.");
                 }
             });
+            Cache::tags(["orders"])->flush();
 
         } catch (\Throwable $th) {
             Log::error('Error processing Xendit webhook: ' . $th->getMessage());

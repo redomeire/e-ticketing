@@ -35,21 +35,19 @@ interface ICategoryState {
 }
 
 interface Props {
-    max_row: number;
-    max_column: number;
     event: IGetEventDetailResponse;
     seats: IGetEventSeatsResponse;
     isLoadingSeat: boolean;
 }
 
-export default function UpdateSeatsForm({ max_row, max_column, event, seats }: Props) {
+export default function UpdateSeatsForm({ event, seats }: Props) {
     const router = useRouter();
     const params = useParams();
     const form = useForm<UpdateSeatsValues>({
         resolver: zodResolver(updateSeatsSchema),
         defaultValues: {
-            max_column,
-            max_row,
+            max_column: seats?.max_column || 0,
+            max_row: seats?.max_row || 0,
             slug: params.slug as string,
             ticket_categories: [],
         }
@@ -67,6 +65,7 @@ export default function UpdateSeatsForm({ max_row, max_column, event, seats }: P
 
     useEffect(() => {
         if (event && seats) {
+            console.log(event, seats)
             const tempMappedSeats: Record<string, string> = {};
             seats.seats.forEach(seat => {
                 tempMappedSeats[`${seat.row_index + 1}-${seat.column_index + 1}`] = seat.category_name;
@@ -100,11 +99,11 @@ export default function UpdateSeatsForm({ max_row, max_column, event, seats }: P
                 }))
             });
         }
-    }, [event, seats, form]);
+    }, [event, seats]);
 
     // eslint-disable-next-line react-hooks/incompatible-library
-    const watchColumn = Number(form.watch("max_column") || 0);
-    const watchRow = Number(form.watch("max_row") || 0);
+    const watchColumn = Number(form.watch("max_column")) || seats?.max_column;
+    const watchRow = Number(form.watch("max_row")) || seats?.max_row;
 
     const handleSeatClick = (r: number, c: number) => {
         const foundSeatFromAPI = seats?.seats.find(s => s.row_index === r - 1 && s.column_index === c - 1);
@@ -236,39 +235,38 @@ export default function UpdateSeatsForm({ max_row, max_column, event, seats }: P
                                         width: 'fit-content'
                                     }}
                                 >
-                                    {Array.from({ length: watchRow }).map((_, rIdx) => {
-                                        const r = rIdx + 1;
-                                        return Array.from({ length: watchColumn }).map((_, cIdx) => {
-                                            const c = cIdx + 1;
-                                            const key = `${r}-${c}`;
-                                            const assignedCatName = seatData[key];
-                                            const category = categories.find(cat => cat.id === assignedCatName);
+                                    {Array.from({ length: watchRow * watchColumn }).map((_, index) => {
+                                        const r = Math.floor(index / watchColumn) + 1;
+                                        const c = (index % watchColumn) + 1;
+                                        const key = `${r}-${c}`;
 
-                                            const isNotAvailable = seats?.seats.find(s => s.row_index === r - 1 && s.column_index === c - 1)?.is_available === false;
+                                        const assignedCatName = seatData[key];
+                                        const category = categories.find(cat => cat.id === assignedCatName);
+                                        const seatInfo = seats?.seats.find(s => s.row_index === r - 1 && s.column_index === c - 1);
+                                        const isNotAvailable = seatInfo?.is_available === false;
+                                        const label = getSeatLabel(r, c);
 
-                                            const label = getSeatLabel(r, c);
-
-                                            return (
-                                                <button
-                                                    key={key}
-                                                    type="button"
-                                                    disabled={isNotAvailable}
-                                                    onClick={() => handleSeatClick(r, c)}
-                                                    style={{
-                                                        backgroundColor: category ? category.colors.bg : '#f3f4f6',
-                                                        borderColor: category ? category.colors.selected : '#e2e8f0',
-                                                        color: category ? category.colors.text : '#6a7282'
-                                                    }}
-                                                    className={cn("h-11 w-11 rounded-xl flex items-center justify-center text-[10px] font-black transition-all border-2",
-                                                        category ? "shadow-md scale-105 border-transparent" : "text-slate-300 hover:border-blue-400 opacity-40",
-                                                        isNotAvailable && "bg-gray-100! text-gray-500! border-transparent! cursor-not-allowed",
-                                                    )}
-                                                >
-                                                    {isNotAvailable ? "OFF" : label}
-                                                </button>
-                                            );
-                                        });
-                                    })}
+                                        return (
+                                            <button
+                                                key={key}
+                                                type="button"
+                                                disabled={isNotAvailable}
+                                                onClick={() => handleSeatClick(r, c)}
+                                                style={{
+                                                    backgroundColor: category ? category.colors.bg : '#f3f4f6',
+                                                    borderColor: category ? category.colors.selected : '#e2e8f0',
+                                                    color: category ? category.colors.text : '#6a7282'
+                                                }}
+                                                className={cn("h-11 w-11 rounded-xl flex items-center justify-center text-[10px] font-black transition-all border-2",
+                                                    category ? "shadow-md scale-105 border-transparent" : "text-slate-300 hover:border-blue-400 opacity-40",
+                                                    isNotAvailable && "bg-gray-100! text-gray-500! border-transparent! cursor-not-allowed",
+                                                )}
+                                            >
+                                                {isNotAvailable ? "OFF" : label}
+                                            </button>
+                                        );
+                                    })
+                                    }
                                 </div>
                             </CardContent>
                         </Card>

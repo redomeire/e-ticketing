@@ -31,7 +31,13 @@ export default function BookingPage() {
     const [applicationFee, setApplicationFee] = useState(0);
     const params = useParams();
 
-    const { mutateAsync, isPending } = useCheckout();
+    const { mutateAsync, isPending } = useCheckout({
+        options: {
+            headers: {
+                "Idempotency-Key": crypto.randomUUID()
+            }
+        }
+    });
 
     const form = useForm<BookingFormData>({
         resolver: zodResolver(bookingSchema),
@@ -112,7 +118,7 @@ export default function BookingPage() {
 
                     <div className="relative">
                         <div className="sticky top-28 bg-[#002558] text-white rounded-3xl p-8 space-y-8 shadow-2xl">
-                            <h3 className="text-xl font-black italic uppercase tracking-tighter border-b border-white/10 pb-4">Ringkasan pesanan</h3>
+                            <h3 className="text-xl font-black capitalize border-b border-white/10 pb-4">Ringkasan pesanan</h3>
 
                             <div className="space-y-4 max-h-75 overflow-y-auto no-scrollbar">
                                 {selectedSeats.length === 0 ? (
@@ -124,7 +130,7 @@ export default function BookingPage() {
                                                 <HugeiconsIcon icon={Ticket} size={16} className="text-blue-400" />
                                                 <span className="font-medium">Kursi {seat.seat_number}</span>
                                             </div>
-                                            <span className="font-bold">Rp {seat.base_price.toLocaleString()}</span>
+                                            <span className="font-bold">{formatCurrency(parseFloat(seat.base_price))}</span>
                                         </div>
                                     ))
                                 )}

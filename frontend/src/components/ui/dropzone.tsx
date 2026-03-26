@@ -31,8 +31,6 @@ const formatAcceptedFileTypes = (accept: Accept) => {
 
 const DropzoneComponent: React.FC<Props> = (props: Props) => {
   const form = useFormContext();
-
-  // State lokal untuk melacak apakah gambar asli (dari URL) dihapus oleh user
   const [isOriginalImageDeleted, setIsOriginalImageDeleted] = useState(false);
 
   const onDrop = (acceptedFiles: File[]) => {
@@ -43,7 +41,6 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
 
       form?.setValue(props.name || "", valueToSet, { shouldValidate: true });
       form?.trigger(props.name || "");
-      // Jika user upload file baru, anggap gambar lama sudah tertimpa/dihapus
       setIsOriginalImageDeleted(false);
     }
   };
@@ -61,7 +58,6 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
     ...props.options,
   });
 
-  // Reset state jika form sukses disubmit
   useEffect(() => {
     if (form?.formState.isSubmitSuccessful) {
       clear();
@@ -74,25 +70,21 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
   const hasFile = files.length > 0;
   const isFirstFileImage = hasFile && files[0].type.startsWith("image/");
 
-  // Logika preview: tampilkan jika ada file baru ATAU ada URL lama yang belum dihapus
   const showFullPreview = props.withPreview && !isMultiple &&
     (isFirstFileImage || (!!props.cover_image_url && !hasFile && !isOriginalImageDeleted));
 
   const displayImageSrc = hasFile ? previewFile(files[0]) : (isOriginalImageDeleted ? null : props.cover_image_url);
 
-  // FUNGSI HAPUS YANG DIPERBAIKI
   const handleManualDelete = (e: React.MouseEvent, file?: File) => {
     e.stopPropagation();
 
     if (props.options?.multiple === false) {
-      // MODE SINGLE
-      clear(); // Hapus dari hook state
-      setIsOriginalImageDeleted(true); // Tandai URL lama dihapus
+      clear();
+      setIsOriginalImageDeleted(true);
       if (props.name) {
         form.setValue(props.name, null, { shouldValidate: true });
       }
     } else if (file) {
-      // MODE MULTIPLE
       removeFile(file);
       if (props.name) {
         const remainingFiles = files.filter((f) => f !== file);
@@ -104,8 +96,6 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
   return (
     <Card title="">
       <div className="relative group transition border border-gray-300 border-dashed cursor-pointer dark:hover:border-brand-500 dark:border-gray-700 rounded-xl hover:border-[#019C98] overflow-hidden">
-
-        {/* Full Image Preview Mode */}
         {showFullPreview && displayImageSrc && (
           <div className="absolute inset-0 z-10 bg-white dark:bg-gray-900">
             <Image
@@ -113,6 +103,7 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
               src={displayImageSrc}
               alt="Preview"
               className="object-cover"
+              loading="eager"
               unoptimized={displayImageSrc.startsWith('http')}
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
@@ -161,8 +152,6 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
           </div>
         </div>
       </div>
-
-      {/* List view untuk Multiple atau File Non-Image */}
       {(isMultiple || (!showFullPreview && hasFile)) && (
         <div className="mt-4">
           <ul className="text-gray-700 dark:text-gray-400 space-y-5 px-5">

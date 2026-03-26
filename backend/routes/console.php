@@ -9,3 +9,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('app:release-expired-order')->everyFiveMinutes();
+
+Schedule::command('backup:run')->dailyAt('01:00');
