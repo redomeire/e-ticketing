@@ -29,7 +29,7 @@ services:
       - e-ticketing-network
 
   postgres:
-    image: postgres:15-alpine
+    image: docker.io/library/postgres:15-alpine
     container_name: e-ticketing-postgres
     environment:
       - POSTGRES_USER=${DB_USERNAME}
@@ -44,7 +44,7 @@ services:
       - e-ticketing-network
 
   redis:
-    image: redis:alpine
+    image: docker.io/library/redis:alpine
     container_name: e-ticketing-redis
     networks:
       - e-ticketing-network
