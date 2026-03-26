@@ -1,0 +1,35 @@
+name: Deploy E-Ticketing App
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Deploy via SSH
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        key: ${{ secrets.VPS_KEY }}
+        port: ${{ secrets.VPS_PORT }}
+        script: |
+          cd /home/root/e-ticketing 
+
+          echo "Pulling latest code..."
+          git pull origin main
+
+          echo "Building and Restarting Services..."
+          podman-compose up -d --build --remove-orphans
+
+          echo "Running Database Migrations..."
+          podman exec e-ticketing-app php artisan migrate
+
+          echo "Cleaning up old images..."
+          podman image prune -af
+
+          echo "Deployment Success"
+          podman ps

@@ -1,5 +1,7 @@
 FROM dunglas/frankenphp:latest AS base
 
+RUN apt-get update && apt-get install -y libpq-dev postgresql-client && apt-get clean
+
 RUN install-php-extensions \
     pdo_pgsql \
     redis \
@@ -21,6 +23,7 @@ ENV APP_ENV=local
 ENV FRANKENPHP_CONFIG="worker ./public/index.php"
 COPY . .
 RUN composer install
+RUN php artisan config:clear
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]
 
 FROM base AS production
@@ -34,4 +37,5 @@ RUN composer install --no-dev --optimize-autoloader
 
 RUN chown -R www-data:www-data storage bootstrap/cache
 
+RUN php artisan config:clear
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]

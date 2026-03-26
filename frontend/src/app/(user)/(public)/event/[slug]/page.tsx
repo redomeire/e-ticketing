@@ -61,6 +61,8 @@ export default async function Page({ params }: Props) {
                                 alt={event.name}
                                 fill
                                 className="object-cover"
+                                sizes="(max-width: 768px) 100vw, 50vw"
+                                loading="eager"
                             />
                         </div>
                     </div>

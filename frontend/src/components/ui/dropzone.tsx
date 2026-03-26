@@ -103,6 +103,7 @@ const DropzoneComponent: React.FC<Props> = (props: Props) => {
               src={displayImageSrc}
               alt="Preview"
               className="object-cover"
+              loading="eager"
               unoptimized={displayImageSrc.startsWith('http')}
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">

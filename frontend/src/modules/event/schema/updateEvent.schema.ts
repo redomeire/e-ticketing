@@ -17,8 +17,6 @@ const baseEventSchema = z.object({
             "Only .jpg, .png, and .webp formats are supported"
         ),
     location: z.string().min(1, "Lokasi wajib diisi"),
-    max_row: z.coerce.number<number>().min(1, "Minimal 1 baris"),
-    max_column: z.coerce.number<number>().min(1, "Minimal 1 kolom"),
     event_categories: z.array(eventCategorySchema).optional(),
 });
 

@@ -27,6 +27,8 @@ export default function EventCard({ event, ticketCategories }: EventCardProps) {
                     alt={event.name}
                     fill
                     className={`object-cover transform group-hover:scale-105 transition-transform duration-500 ${event.is_active ? "" : "grayscale"}`}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="lazy"
                 />
                 <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm">
                     <p className="text-[10px] font-bold text-[#002558] uppercase tracking-wider">{event.is_active ? "Active" : "Inactive"}</p>
