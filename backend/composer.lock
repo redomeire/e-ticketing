@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "00a18965e7c5a3d27e45dc552ba834a5",
+    "content-hash": "4a0c613a0a44e0deb12d43d84dc57f98",
     "packages": [
         {
             "name": "beberlei/assert",
@@ -7080,6 +7080,89 @@
                 }
             ],
             "time": "2024-11-21T01:49:47+00:00"
+        },
+        {
+            "name": "wnx/laravel-backup-restore",
+            "version": "v1.9.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/stefanzweifel/laravel-backup-restore.git",
+                "reference": "1d5c52faa04407cbd0db84d89a0c4f97c713aa10"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/stefanzweifel/laravel-backup-restore/zipball/1d5c52faa04407cbd0db84d89a0c4f97c713aa10",
+                "reference": "1d5c52faa04407cbd0db84d89a0c4f97c713aa10",
+                "shasum": ""
+            },
+            "require": {
+                "ext-zip": "*",
+                "illuminate/contracts": "^12.0 | ^13.0",
+                "laravel/prompts": "^0.3.8",
+                "php": "^8.4",
+                "spatie/laravel-backup": "^9.0 | ^10.0",
+                "spatie/laravel-package-tools": "^1.92",
+                "spatie/temporary-directory": "^2.0"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.8",
+                "laravel/pint": "^1.26",
+                "nunomaduro/collision": "^8.0",
+                "orchestra/testbench": "^10.8 | ^11.0",
+                "pestphp/pest": "^4.1",
+                "pestphp/pest-plugin-laravel": "^4.0",
+                "phpstan/extension-installer": "^1.4"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "LaravelBackupRestore": "Wnx\\LaravelBackupRestore\\Facades\\LaravelBackupRestore"
+                    },
+                    "providers": [
+                        "Wnx\\LaravelBackupRestore\\LaravelBackupRestoreServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Wnx\\LaravelBackupRestore\\": "src",
+                    "Wnx\\LaravelBackupRestore\\Database\\Factories\\": "database/factories"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Stefan Zweifel",
+                    "email": "stefan@stefanzweifel.dev",
+                    "role": "Developer"
+                }
+            ],
+            "description": "A package to restore database backups made with spatie/laravel-backup.",
+            "homepage": "https://github.com/stefanzweifel/laravel-backup-restore",
+            "keywords": [
+                "laravel",
+                "laravel-backup",
+                "laravel-backup-restore"
+            ],
+            "support": {
+                "issues": "https://github.com/stefanzweifel/laravel-backup-restore/issues",
+                "source": "https://github.com/stefanzweifel/laravel-backup-restore/tree/v1.9.2"
+            },
+            "funding": [
+                {
+                    "url": "https://buymeacoff.ee/3oQ64YW",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/stefanzweifel",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-02-27T20:41:57+00:00"
         },
         {
             "name": "xendit/xendit-php",

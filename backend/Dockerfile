@@ -23,6 +23,7 @@ ENV APP_ENV=local
 ENV FRANKENPHP_CONFIG="worker ./public/index.php"
 COPY . .
 RUN composer install
+RUN php artisan config:clear && php artisan optimize
 ENTRYPOINT ["php", "artisan", "octane:frankenphp"]
 
 FROM base AS production
