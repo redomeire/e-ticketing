@@ -1,4 +1,4 @@
-FROM dunglas/frankenphp:latest AS base
+FROM docker.io/library/dunglas/frankenphp:latest AS base
 
 RUN apt-get update && apt-get install -y libpq-dev postgresql-client && apt-get clean
 
@@ -11,7 +11,7 @@ RUN install-php-extensions \
     bcmath \
     gd
 
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=docker.io/library/composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
