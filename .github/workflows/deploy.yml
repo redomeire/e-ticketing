@@ -3,6 +3,8 @@ name: Deploy E-Ticketing App
 on:
   push:
     branches: ["main"]
+    paths:
+      - 'backend/**'
 
 jobs:
   deploy:
