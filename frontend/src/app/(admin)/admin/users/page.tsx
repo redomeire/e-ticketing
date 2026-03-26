@@ -1,6 +1,6 @@
 "use client"
 
-import React from "react";
+import React, { Suspense } from "react";
 import {
     Table,
     TableBody,
@@ -39,7 +39,7 @@ import { formatDate } from "@/lib/utils/formatDate";
 import { QueryStateHandler } from "@/components/query/QueryStateHandler";
 import { cn } from "@/lib/utils/cn";
 
-export default function PageContent() {
+function PageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const searchQuery = searchParams.get("search") || "";
@@ -226,4 +226,16 @@ export default function PageContent() {
             </div>
         </div>
     );
+}
+
+export default function Page() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center">
+                <p className="text-slate-500 text-base">Memuat data user...</p>
+            </div>
+        }>
+            <PageContent />
+        </Suspense>
+    )
 }
