@@ -7,6 +7,7 @@ use App\Models\EventSeat;
 use App\Models\Order;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class ReleaseExpiredOrder extends Command
 {
@@ -73,6 +74,7 @@ class ReleaseExpiredOrder extends Command
                     $this->warn("Released " . $zombie_seat_ids->count() . " orphan/failed locks and cleared ghost attendees.");
                 }
             });
+            Cache::tags(["orders"])->flush();
 
             $this->info('Cleanup successful.');
         } catch (\Exception $e) {
