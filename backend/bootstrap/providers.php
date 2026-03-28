@@ -5,4 +5,5 @@ return [
     App\Providers\AuthServiceProvider::class,
     App\Providers\ImageUploadServiceProvider::class,
     App\Providers\PaymentServiceProvider::class,
+    App\Providers\TelescopeServiceProvider::class,
 ];
