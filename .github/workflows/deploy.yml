@@ -27,7 +27,9 @@ jobs:
 
           cd backend
           echo "Cleaning up old containers and images..."
-          podman-compose down
+          podman-compose down --remove-orphans || true
+
+          podman rm -f e-ticketing-app e-ticketing-worker e-ticketing-scheduler e-ticketing-redis e-ticketing-postgres 2>/dev/null || true
 
           echo "Building and Restarting Services..."
           podman-compose up -d --build --remove-orphans
