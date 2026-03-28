@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Observers\EventSeatObserver;
 use App\Observers\OrderObserver;
 use App\Observers\UserObserver;
+use App\Services\AutoRefreshingDropBoxTokenService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -52,9 +53,7 @@ class AppServiceProvider extends ServiceProvider
         });
         Storage::extend('dropbox', function ($app, $config) {
             $adapter = new DropboxAdapter(new DropboxClient(
-                clientId: $config['app_key'],
-                clientSecret: $config['app_secret'],
-                refreshToken: $config['refresh_token'],
+                new AutoRefreshingDropBoxTokenService()
             ));
 
             return new FilesystemAdapter(
