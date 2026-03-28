@@ -5,12 +5,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    entrypoint: php artisan octane:frankenphp --caddyfile=/etc/caddy/Caddyfile --https --workers=3 --max-requests=500
+    entrypoint: php artisan octane:frankenphp --port=8000 --workers=3 --max-requests=500 --host=0.0.0.0
     container_name: e-ticketing-app
     image: e-ticketing-app:latest
     restart: unless-stopped
     ports:
-      - "8000:443"
+      - "8000:8000"
     volumes:
       - .:/app
       - vendor_data:/app/vendor
@@ -19,7 +19,10 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./certs:/etc/caddy/certs:ro
     environment:
-      - SERVER_NAME=${APP_URL}
+      - SERVER_NAME=:8000
+      - CADDY_GLOBAL_OPTIONS=auto_https off
+      - SSL_CERT_FILE=/etc/caddy/certs/cert.pem
+      - SSL_CERT_KEY_FILE=/etc/caddy/certs/key.pem
     depends_on:
       postgres:
         condition: service_healthy

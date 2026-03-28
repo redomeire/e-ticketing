@@ -1,17 +1,14 @@
 {
+    auto_https off
     admin off
 }
 
-e-ticketing-mocha.my.id:443 {
+:8000 {
     tls /etc/caddy/certs/cert.pem /etc/caddy/certs/key.pem
 
     encode zstd gzip
 
     root * public/
 
-    frankenphp {
-        worker public/index.php
-    }
-
-    file_server
+    php_server
 }
