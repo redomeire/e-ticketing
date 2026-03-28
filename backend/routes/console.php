@@ -11,3 +11,5 @@ Artisan::command('inspire', function () {
 Schedule::command('app:release-expired-order')->everyFiveMinutes();
 
 Schedule::command('backup:run')->dailyAt('01:00');
+
+Schedule::command('telescope:prune')->daily();
