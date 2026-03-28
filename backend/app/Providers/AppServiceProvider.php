@@ -51,10 +51,12 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinutes(30, 3)->by(request()->email ?: request()->ip());
         });
         Storage::extend('dropbox', function ($app, $config) {
-             $adapter = new DropboxAdapter(new DropboxClient(
-                $config['authorization_token']
+            $adapter = new DropboxAdapter(new DropboxClient(
+                clientId: $config['app_key'],
+                clientSecret: $config['app_secret'],
+                refreshToken: $config['refresh_token'],
             ));
- 
+
             return new FilesystemAdapter(
                 new Filesystem($adapter, $config),
                 $adapter,

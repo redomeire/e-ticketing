@@ -41,7 +41,7 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
+            'url' => rtrim(env('APP_URL', 'http://localhost'), '/') . '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,
@@ -63,6 +63,9 @@ return [
         'dropbox' => [
             'driver' => 'dropbox',
             'authorization_token' => env('DROPBOX_AUTH_TOKEN'),
+            'app_key' => env('DROPBOX_APP_KEY'),
+            'app_secret' => env('DROPBOX_APP_SECRET'),
+            'refresh_token' => env('DROPBOX_REFRESH_TOKEN'),
         ],
 
     ],
