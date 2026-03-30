@@ -36,6 +36,8 @@ import {
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
+import { useGetAnalytics } from "@/modules/analytics/hooks/useAnalyticsRepository";
+import { QueryStateHandler } from "@/components/query/QueryStateHandler";
 
 const trendData: Record<string, { label: string; revenue: number }[]> = {
     week: [
@@ -63,6 +65,10 @@ const chartConfig = {
 
 export default function AdminDashboard() {
     const [timeRange, setTimeRange] = useState("week");
+    const { data: analytics, isPending, isError } = useGetAnalytics({}, {
+        refetchOnWindowFocus: false,
+        staleTime: Infinity,
+    });
 
     return (
         <div className="space-y-8 bg-slate-50/30 font-sans">
@@ -75,36 +81,46 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                <StatCard
-                    title="Penjualan Tiket"
-                    value="14,208"
-                    icon={Ticket}
-                    iconColor="text-blue-600"
-                    subText="Tiket terjual terakumulasi"
-                />
-                <StatCard
-                    title="Total Pendapatan"
-                    value="Rp 1.24M"
-                    icon={DollarSign}
-                    iconColor="text-emerald-600"
-                    trend="+8.2%"
-                />
-                <StatCard
-                    title="User Terdaftar"
-                    value="3,842"
-                    icon={Users}
-                    iconColor="text-purple-600"
-                    subText="Total akun aktif"
-                />
-                <StatCard
-                    title="Event Terselenggara"
-                    value="24"
-                    icon={Calendar}
-                    iconColor="text-orange-500"
-                    subText="Event yang telah berlangsung"
-                />
-            </div>
+            <QueryStateHandler
+                data={analytics}
+                isPending={isPending}
+                isError={isError}
+            >
+                {
+                    analytics &&
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                        <StatCard
+                            title="Penjualan Tiket"
+                            value={analytics.data.total_seats_booked.toLocaleString()}
+                            icon={Ticket}
+                            iconColor="text-blue-600"
+                            subText="Tiket terjual terakumulasi"
+                        />
+                        <StatCard
+                            title="Total Pendapatan"
+                            value="Rp 1.24M"
+                            icon={DollarSign}
+                            iconColor="text-emerald-600"
+                            trend="+8.2%"
+                        />
+                        <StatCard
+                            title="User Terdaftar"
+                            value={analytics.data.total_users.toLocaleString()}
+                            icon={Users}
+                            iconColor="text-purple-600"
+                            subText="Total akun aktif"
+                        />
+                        <StatCard
+                            title="Event Terselenggara"
+                            value={analytics.data.total_events.toLocaleString()}
+                            icon={Calendar}
+                            iconColor="text-orange-500"
+                            subText="Event yang telah berlangsung"
+                        />
+                    </div>
+                }
+            </QueryStateHandler>
+
 
             <Card className="border-none shadow-sm bg-white overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 pb-6 px-6">
