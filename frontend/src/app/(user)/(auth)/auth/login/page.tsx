@@ -20,6 +20,8 @@ import { useForm } from 'react-hook-form';
 import loginSchema, { LoginFormData } from '@/modules/auth/schema/login.schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import FormProviderWrapper from '@/components/provider/FormProviderWrapper';
+import { Turnstile } from '@marsidev/react-turnstile';
+import { useTurnstileToken } from '@/modules/auth/hooks/useTurnstileToken';
 
 export default function Page() {
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -31,10 +33,21 @@ export default function Page() {
         },
         mode: "onBlur"
     });
+    const {
+        ref: turnstileRef,
+        token: turnstileToken,
+        setToken,
+        siteKey
+    } = useTurnstileToken();
 
     const handleSubmit = async (data: LoginFormData) => {
+        if (!turnstileToken) {
+            toast.error("Please complete the CAPTCHA challenge.");
+            return;
+        }
         const result = await signIn("credentials", {
             ...data,
+            turnstileToken,
             redirect: false
         })
         if (result?.error) {
@@ -98,7 +111,13 @@ export default function Page() {
                                 />
                             </div>
                         </div>
-
+                        <Turnstile
+                            siteKey={siteKey}
+                            ref={turnstileRef}
+                            onSuccess={(token) => {
+                                setToken(token);
+                            }}
+                        />
                         <Button
                             type="submit"
                             isLoading={form.formState.isSubmitting}

@@ -21,6 +21,8 @@ import registerSchema, { RegisterFormData } from '@/modules/auth/schema/register
 import FormProviderWrapper from '@/components/provider/FormProviderWrapper';
 import { useRegister } from '@/modules/auth/hooks/useAuthRepository';
 import { useRouter } from 'next/navigation';
+import { useTurnstileToken } from '@/modules/auth/hooks/useTurnstileToken';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function Page() {
     const router = useRouter();
@@ -42,11 +44,19 @@ export default function Page() {
             router.push("/auth/login");
         }
     });
+    const {
+        ref: turnstileRef,
+        token: turnstileToken,
+        setToken,
+        siteKey
+    } = useTurnstileToken();
+
     const handleSubmit = async (data: RegisterFormData) => {
         await register({
             name: data.name,
             email: data.email,
-            password: data.password
+            password: data.password,
+            turnstileToken
         });
     };
     return (
@@ -141,7 +151,13 @@ export default function Page() {
                                 </div>
                             </div>
                         </div>
-
+                        <Turnstile
+                            siteKey={siteKey}
+                            ref={turnstileRef}
+                            onSuccess={(token) => {
+                                setToken(token);
+                            }}
+                        />
                         <Button
                             type="submit"
                             className="w-full h-14 bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold shadow-lg shadow-blue-200 rounded-xl transition-all active:scale-95"
