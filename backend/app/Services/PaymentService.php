@@ -5,15 +5,20 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\User;
+use Xendit\BalanceAndTransaction\BalanceApi;
 use Xendit\Invoice\CreateInvoiceRequest;
 use Xendit\Invoice\InvoiceApi;
 
 class PaymentService
 {
     protected InvoiceApi $invoiceApi;
-    public function __construct(InvoiceApi $invoiceApi)
-    {
+    protected BalanceApi $balanceApi;
+    public function __construct(
+        InvoiceApi $invoiceApi,
+        BalanceApi $balanceApi
+    ) {
         $this->invoiceApi = $invoiceApi;
+        $this->balanceApi = $balanceApi;
     }
 
     public function createInvoice(Order $order, User $user)
@@ -46,6 +51,15 @@ class PaymentService
             return $invoice_payload;
         } catch (\Exception $e) {
             throw new \Exception('Failed to create invoice: ' . $e->getMessage());
+        }
+    }
+    public function getBalance()
+    {
+        try {
+            $balance = $this->balanceApi->getBalance("CASH", "IDR")->getBalance();
+            return $balance;
+        } catch (\Exception $e) {
+            throw new \Exception('Failed to retrieve balance: ' . $e->getMessage());
         }
     }
 }
