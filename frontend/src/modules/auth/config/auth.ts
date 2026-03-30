@@ -10,7 +10,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 email: {
                     value: ""
                 },
-                password: {}
+                password: {},
+                turnstileToken: {}
             },
             authorize: async (credentials) => {
                 try {
@@ -23,7 +24,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         method: "post",
                         body: JSON.stringify({
                             email: credentials.email,
-                            password: credentials.password
+                            password: credentials.password,
+                            turnstileToken: credentials.turnstileToken
                         }),
                     });
                     const result = await res.json();

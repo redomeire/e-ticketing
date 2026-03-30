@@ -5,6 +5,7 @@ type IRegisterRequest = {
     email: string;
     password: string;
     name: string;
+    turnstileToken?: string;
 }
 
 const register = async (
