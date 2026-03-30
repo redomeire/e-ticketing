@@ -183,4 +183,46 @@ class AuthController extends Controller
             return $this->sendError('Password reset failed', $th->getMessage(), code: 500);
         }
     }
+    public function telescopeLoginForm()
+    {
+        return view('telescope-login');
+    }
+    public function telescopeLogin(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = User::where('email', $request->email)
+            ->whereIn('role', ['admin', 'superadmin'])
+            ->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return back()->withErrors(['email' => 'Invalid credentials.']);
+        }
+
+        if (
+            !in_array($user->email, [
+                env('SUPERADMIN_EMAIL', 'superadmin@tedxbandung.com'),
+            ])
+        ) {
+            return back()->withErrors(['email' => 'Unauthorized operation']);
+        }
+
+        session([
+            'telescope_user' => [
+                'id' => $user->id,
+                'email' => $user->email,
+                'role' => $user->role,
+            ]
+        ]);
+
+        return redirect('/telescope');
+    }
+    public function telescopeLogout()
+    {
+        session()->forget('telescope_user');
+        return redirect('/telescope-login');
+    }
 }
