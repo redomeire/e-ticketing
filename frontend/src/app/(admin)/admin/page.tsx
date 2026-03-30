@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/chart";
 import { useGetAnalytics } from "@/modules/analytics/hooks/useAnalyticsRepository";
 import { QueryStateHandler } from "@/components/query/QueryStateHandler";
+import { formatCurrency } from "@/lib/utils/formatCurrency";
 
 const trendData: Record<string, { label: string; revenue: number }[]> = {
     week: [
@@ -98,7 +99,9 @@ export default function AdminDashboard() {
                         />
                         <StatCard
                             title="Total Pendapatan"
-                            value="Rp 1.24M"
+                            value={formatCurrency(analytics.data.balance, {
+                                compact: true
+                            })}
                             icon={DollarSign}
                             iconColor="text-emerald-600"
                             trend="+8.2%"
