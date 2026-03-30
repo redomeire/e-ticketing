@@ -34,6 +34,10 @@ jobs:
           echo "Building and Restarting Services..."
           podman-compose up -d --build --remove-orphans
 
+          echo "cleaning old caches and optimize"
+          podman exec e-ticketing-app php artisan config:clear
+          podman exec e-ticketing-app php artisan optimize
+
           echo "Running Database Migrations..."
           podman exec e-ticketing-app php artisan migrate --force
 
