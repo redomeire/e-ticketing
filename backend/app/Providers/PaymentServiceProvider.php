@@ -6,6 +6,7 @@ use App\Services\PaymentService;
 use Illuminate\Support\ServiceProvider;
 use Xendit\Configuration;
 use Xendit\Invoice\InvoiceApi;
+use Xendit\BalanceAndTransaction\BalanceApi;
 
 class PaymentServiceProvider extends ServiceProvider
 {
@@ -17,9 +18,13 @@ class PaymentServiceProvider extends ServiceProvider
         $this->app->singleton(InvoiceApi::class, function ($app) {
             return new InvoiceApi();
         });
+        $this->app->singleton(BalanceApi::class, function ($app) {
+            return new BalanceApi();
+        });
         $this->app->singleton(PaymentService::class, function ($app) {
             return new PaymentService(
                 $app->make(InvoiceApi::class),
+                $app->make(BalanceApi::class)
             );
         });
     }
