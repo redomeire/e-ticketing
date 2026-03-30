@@ -6,7 +6,7 @@ const getAnalytics = async (
     req: IHttpRequest<{}>
 ): Promise<IHttpResponse<IAnalytics>> => {
     const response = await api.get(
-        '/admin/analytics',
+        '/event/admin/analytics',
         req.options
     );
     return response.data;
