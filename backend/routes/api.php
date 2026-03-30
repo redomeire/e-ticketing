@@ -50,9 +50,7 @@ Route::prefix('v1')->group(function () {
 
             Route::prefix('admin')->group(function () {
                 Route::middleware(['abilities:event-manage'])->group(function () {
-                    Route::group(['prefix' => 'analytics'], function () {
-                        Route::get('/', [AnalyticsController::class, 'getAnalytics'])->name('event.analytics');
-                    });
+                    Route::get('/analytics', [AnalyticsController::class, 'getAnalytics'])->name('event.analytics');
                     Route::get('/', [EventController::class, 'adminGetEvents'])->name('event.admin.index');
                     Route::post('/seats', [EventController::class, 'storeSeats'])->name('event.seats.store');
                     Route::post('/', [EventController::class, 'store'])->name('event.store');
