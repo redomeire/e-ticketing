@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Rules\Turnstile;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,7 @@ class AuthController extends Controller
             $validation = Validator::make($request->all(), [
                 'email' => 'required|email',
                 'password' => 'required',
+                'turnstileToken' => ['required', new Turnstile()],
             ]);
 
             if ($validation->fails()) {
@@ -59,6 +61,7 @@ class AuthController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:6',
+                'turnstileToken' => ['required', new Turnstile()],
             ]);
             if ($validation->fails()) {
                 return $this->sendError('Validation error', $validation->errors(), code: 422);
@@ -74,7 +77,7 @@ class AuthController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
             event(new Registered($user));
-            return $this->sendResponse($user, 'Registration successful');
+            return $this->sendResponse($user, 'Registration successful. Please check your email for verification link.');
         } catch (\Throwable $th) {
             return $this->sendError('Registration failed', $th->getMessage(), code: 500);
         }
