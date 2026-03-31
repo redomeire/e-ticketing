@@ -14,6 +14,8 @@ RUN install-php-extensions \
     bcmath \
     gd
 
+RUN pecl install excimer
+
 COPY --from=docker.io/library/composer:latest /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
