@@ -24,10 +24,10 @@ class AnalyticsController extends Controller
             }
             $balance = $this->payment_service->getBalance();
             $totalSeatsBooked = EventSeat::where('is_available', false)->count();
-            $total_users = User::whereNot([
-                ['role', 'admin'],
-                ['role', 'superadmin']
-            ])->count();
+            $total_users = User::whereNotIn(
+                'role',
+                ['admin', 'superadmin']
+            )->count();
             $total_events = Event::count();
             $data = [
                 'total_seats_booked' => $totalSeatsBooked,
