@@ -17,6 +17,7 @@
         "laravel/telescope": "^5.19",
         "laravel/tinker": "^3.0",
         "predis/predis": "^3.4",
+        "sentry/sentry-laravel": "^4.24",
         "spatie/flysystem-dropbox": "^3.1",
         "spatie/laravel-backup": "^10.2",
         "wnx/laravel-backup-restore": "^1.9",
