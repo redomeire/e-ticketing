@@ -69,7 +69,7 @@ class RetrieveCheckoutJob implements ShouldQueue
                 } else if (in_array($status_upper, ['EXPIRED', 'FAILED'])) {
                     $this->update_seats_status($order->id, true, null);
 
-                    $order->attendees()->delete();
+                    $order->attendee()->delete();
 
                     if ($status_upper === 'FAILED') {
                         Mail::to($order->user->email)->send(new PaymentFailed($order));
