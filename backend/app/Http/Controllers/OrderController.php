@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\OrderDetailResource;
+use App\Jobs\ReleaseExpiredOrderJob;
 
 class OrderController extends Controller
 {
@@ -118,7 +119,6 @@ class OrderController extends Controller
             unset($orderData['attendee']);
 
             return $this->sendResponse($orderData, 'Order details retrieved successfully');
-
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve order details', [
                 $e->getMessage()
@@ -212,9 +212,13 @@ class OrderController extends Controller
                 $order->update(['payment_url' => $invoice_url]);
                 return [
                     'order_id' => $order->id,
+                    'order' => $order,
                     'invoice_url' => $invoice_url,
                 ];
             });
+
+            ReleaseExpiredOrderJob::dispatch(['order' => $response['order']])
+                ->delay(now()->addMinutes(5));
 
             return $this->sendResponse($response, 'Checkout URL created', 201);
         } catch (\Exception $e) {
