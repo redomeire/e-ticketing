@@ -217,7 +217,7 @@ class OrderController extends Controller
                 ];
             });
 
-            ReleaseExpiredOrderJob::dispatch(['order' => $response['order']])
+            ReleaseExpiredOrderJob::dispatch($response['order'])
                 ->delay(now()->addMinutes(5));
 
             return $this->sendResponse($response, 'Checkout URL created', 201);
