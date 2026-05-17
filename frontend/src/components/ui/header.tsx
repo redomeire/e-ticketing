@@ -44,7 +44,7 @@ const Header = () => {
     const { mutateAsync: logout } = useLogout({});
     const router = useRouter();
 
-    const isAdmin = session?.user.role === "admin";
+    const isAdmin = session?.user.role === "admin" || session?.user.role === "superadmin";
     const profileBaseRoute = isAdmin ? "/admin" : "/user";
 
     const navLinks = [
