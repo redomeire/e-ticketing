@@ -1,7 +1,5 @@
-import { auth, signOut } from "@/modules/auth/config/auth";
+import { signOut } from "@/modules/auth/config/auth";
 import axios from "axios";
-import { Session } from "next-auth";
-import { getSession } from "next-auth/react";
 import { toast } from "sonner";
 
 const isServer = typeof window === "undefined";
@@ -17,15 +15,6 @@ const api = axios.create({
 
 api.interceptors.request.use(
     async (config) => {
-        // detect if it is client side
-        let session: Session | null = null;
-        if (isServer) {
-            session = await auth();
-            config.headers["Authorization"] = `Bearer ${session?.token}`;
-            return config;
-        }
-        session = await getSession();
-        config.headers["Authorization"] = `Bearer ${session?.token}`;
         return config;
     },
     (error) => {
