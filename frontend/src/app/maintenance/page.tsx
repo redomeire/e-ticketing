@@ -2,12 +2,15 @@ import { Gear } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { get } from "@vercel/edge-config";
 
-const maintenance = await get('maintenance') as {
+interface MaintenanceConfig {
     enabled: boolean;
     durationMinutes: number;
-};
+}
+
+export const revalidate = 60;
 
 export default async function Page() {
+    const maintenance = await get('maintenance') as MaintenanceConfig;
     return (
         <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-6 text-stone-800 select-none">
             <div className="max-w-md w-full text-center space-y-6">
