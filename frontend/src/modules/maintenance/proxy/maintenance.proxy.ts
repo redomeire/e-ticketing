@@ -3,6 +3,11 @@ import type { NextFetchEvent, NextRequest } from "next/server";
 import { CustomProxy } from "@/proxy/chain";
 import { get } from "@vercel/edge-config";
 
+interface MaintenanceConfig {
+    enabled: boolean;
+    durationMinutes: number;
+}
+
 export default function withIsMaintenance(
     proxy: CustomProxy
 ): CustomProxy {
@@ -12,10 +17,7 @@ export default function withIsMaintenance(
         response: NextResponse
     ) => {
         try {
-            const maintenance = await get('maintenance') as {
-                enabled: boolean;
-                durationMinutes: number;
-            };
+            const maintenance = await get('maintenance') as MaintenanceConfig;
 
             if (maintenance.enabled) {
                 return NextResponse.rewrite(new URL("/maintenance", request.url));
