@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { getToken } from "next-auth/jwt";
+import { auth } from "@/modules/auth/config/auth";
 
 interface ProxyContext {
     params: Promise<{ slug: string[] }>;
@@ -8,9 +9,14 @@ interface ProxyContext {
 
 async function proxyHandler(request: Request, context: ProxyContext) {
     console.log(`Proxying request to API: ${request.method} ${request.url}`);
+    const session = await auth();
+    console.log("Session in proxy handler:", session);
     const tokenData = await getToken({
         req: request,
-        secret: process.env.AUTH_SECRET
+        secret: process.env.AUTH_SECRET,
+        salt: process.env.NODE_ENV === "production"
+            ? "__Secure-authjs.session-token"
+            : "authjs.session-token"
     });
 
     const slugPath = (await context.params).slug.join("/");
@@ -26,8 +32,6 @@ async function proxyHandler(request: Request, context: ProxyContext) {
         "Content-Type": request.headers.get("content-type") || "application/json",
         "Idempotency-Key": request.headers.get("Idempotency-Key") || crypto.randomUUID(),
     };
-
-    console.log("Request Headers:", Object.fromEntries(request.headers.entries()));
 
     if (tokenData && tokenData.token) {
         headers["Authorization"] = `Bearer ${tokenData.token}`;
