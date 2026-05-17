@@ -11,14 +11,18 @@ async function proxyHandler(request: Request, context: ProxyContext) {
     console.log(`Proxying request to API: ${request.method} ${request.url}`);
     const session = await auth();
     console.log("Session in proxy handler:", session);
+
+    const isProduction = process.env.NODE_ENV === "production";
     const tokenData = await getToken({
         req: request,
         secret: process.env.AUTH_SECRET,
-        salt: process.env.NODE_ENV === "production"
+        secureCookie: isProduction,
+        cookieName: isProduction
             ? "__Secure-authjs.session-token"
             : "authjs.session-token"
     });
 
+    console.log("Token data in proxy handler:", tokenData);
     const slugPath = (await context.params).slug.join("/");
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "";
     const targetUrl = `${baseUrl}/api/v1/${slugPath}`;
