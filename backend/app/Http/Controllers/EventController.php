@@ -377,7 +377,11 @@ class EventController extends Controller
             $event = Event::where('slug', $slug)->first();
             if (!$event)
                 return $this->sendError('Event not found', [], 404);
-            $cache_key = "event:seats:{$event->id}";
+            $signature = md5(serialize([
+                'event_id' => $event->id,
+                'user_id' => auth()->id() ?? 'guest',
+            ]));
+            $cache_key = "event:seats:{$signature}";
             $cached_data = Cache::tags(["event_seats"])->get($cache_key);
             if ($cached_data) {
                 Log::info("Cache hit for key: {$cache_key}");

@@ -147,10 +147,19 @@ class OrderController extends Controller
 
             $response = DB::transaction(function () use ($validated, $user, $seat_ids) {
                 $seats = EventSeat::whereIn('id', $seat_ids)
+                    ->where('is_available', true)
                     ->where(function ($query) {
                         $query->whereNull('locked_until')
                             ->orWhere('locked_until', '<', now());
                     })
+                    ->with([
+                        'ticketCategory' => function ($query) {
+                            $query->select('id', 'name', 'base_price', 'event_id');
+                        },
+                        'ticketCategory.event' => function ($query) {
+                            $query->select('id', 'name', 'start_time', 'end_time', 'location');
+                        }
+                    ])
                     ->lockForUpdate()
                     ->get();
                 if ($seats->count() !== count(array_unique($seat_ids))) {
@@ -208,14 +217,23 @@ class OrderController extends Controller
                 DB::table('order_items')->insert($order_items);
                 DB::table('attendees')->insert($attendees_data);
 
-                $invoice_url = $this->createInvoice($order);
-                $order->update(['payment_url' => $invoice_url]);
                 return [
                     'order_id' => $order->id,
                     'order' => $order,
-                    'invoice_url' => $invoice_url,
+                    'event_id' => $seats->first()->ticketCategory->event->id,
                 ];
             });
+
+            $invoice_url = $this->createInvoice($response['order']);
+            $response['order']->update(['payment_url' => $invoice_url]);
+
+            $signature = md5(serialize([
+                'event_id' => $response['event_id'],
+                'user_id' => auth()->id() ?? 'guest',
+            ]));
+            $cache_key = "event:seats:{$signature}";
+
+            Cache::tags(["event_seats"])->forget($cache_key);
 
             ReleaseExpiredOrderJob::dispatch($response['order'])
                 ->delay(now()->addMinutes(5));
@@ -259,8 +277,23 @@ class OrderController extends Controller
     }
     private function createInvoice(Order $order)
     {
-        $order->load('orderItem.seat');
-        $invoice = $this->payment_service->createInvoice($order, auth()->user());
-        return $invoice->getInvoiceUrl();
+        try {
+            $order->load('orderItem.seat');
+            $invoice = $this->payment_service->createInvoice($order, auth()->user());
+            return $invoice->getInvoiceUrl();
+        } catch (\Exception $e) {
+            Log::error('Failed to create invoice', ['error' => $e->getMessage()]);
+            $seat_ids = $order->orderItem->pluck('seat_id')->toArray();
+
+            if (!empty($seat_ids)) {
+                EventSeat::whereIn('id', $seat_ids)->update([
+                    'is_available' => true,
+                    'locked_until' => null,
+                ]);
+            }
+
+            $order->update(['status' => 'failed']);
+            throw new \Exception('Failed to create invoice: ' . $e->getMessage());
+        }
     }
 }
