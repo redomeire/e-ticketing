@@ -26,15 +26,6 @@ class OrderController extends Controller
         try {
             $user = auth()->user();
             $page = $request->query('page', 1);
-            $signature = md5(serialize([
-                'user_id' => $user->id,
-                'page' => $page,
-            ]));
-            $cache_key = "orders:{$user->id}:{$signature}";
-            $cached_data = Cache::tags(["orders"])->get($cache_key);
-            if ($cached_data) {
-                return $this->sendResponse($cached_data, 'Orders retrieved successfully (from cache)');
-            }
             $orders = DB::table('orders')
                 ->join('order_items', 'orders.id', '=', 'order_items.order_id')
                 ->select(
@@ -64,7 +55,6 @@ class OrderController extends Controller
                 ->orderBy('orders.created_at', 'desc')
                 ->paginate(10, ['*'], 'page', $page);
 
-            Cache::tags(["orders"])->put($cache_key, $orders, now()->addMinutes(10));
             return $this->sendResponse($orders, 'Orders retrieved successfully');
         } catch (\Exception $e) {
             return $this->sendError('Failed to retrieve orders', [
@@ -226,16 +216,15 @@ class OrderController extends Controller
 
             $invoice_url = $this->createInvoice($response['order']);
             $response['order']->update(['payment_url' => $invoice_url]);
-
+            $user = auth()->user();
             $signature = md5(serialize([
                 'event_id' => $response['event_id'],
-                'user_id' => auth()->id() ?? 'guest',
+                'user_id' => $user->id ?? 'guest',
             ]));
-            $cache_key = "event:seats:{$signature}";
+            $seats_cache_key = "event:seats:{$signature}";
 
-            Cache::tags(["event_seats"])->forget($cache_key);
-
-            ReleaseExpiredOrderJob::dispatch($response['order'])
+            Cache::tags(["event_seats"])->forget($seats_cache_key);
+            ReleaseExpiredOrderJob::dispatch($response['order'], $user->id ?? 'guest')
                 ->delay(now()->addMinutes(5));
 
             return $this->sendResponse($response, 'Checkout URL created', 201);
