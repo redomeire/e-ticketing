@@ -74,7 +74,6 @@ class ReleaseExpiredOrder extends Command
                     $this->warn("Released " . $zombie_seat_ids->count() . " orphan/failed locks and cleared ghost attendees.");
                 }
             });
-            Cache::tags(["orders"])->flush();
 
             $this->info('Cleanup successful.');
         } catch (\Exception $e) {

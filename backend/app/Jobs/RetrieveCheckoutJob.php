@@ -77,7 +77,6 @@ class RetrieveCheckoutJob implements ShouldQueue
                     Log::warning("Order #{$order->invoice_id} released due to {$status_upper}.");
                 }
             });
-            Cache::tags(["orders"])->flush();
 
         } catch (\Throwable $th) {
             Log::error('Error processing Xendit webhook: ' . $th->getMessage());
